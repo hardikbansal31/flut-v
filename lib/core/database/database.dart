@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -35,6 +35,18 @@ class AppDatabase extends _$AppDatabase {
         if (from < 2) {
           await m.addColumn(mediaFiles, mediaFiles.durationMillis);
           await m.addColumn(mediaFiles, mediaFiles.positionMillis);
+        }
+        if (from < 3) {
+          await m.addColumn(mediaFiles, mediaFiles.tmdbId);
+          await m.addColumn(mediaFiles, mediaFiles.mediaType);
+          await m.addColumn(mediaFiles, mediaFiles.tmdbTitle);
+          await m.addColumn(mediaFiles, mediaFiles.overview);
+          await m.addColumn(mediaFiles, mediaFiles.posterPath);
+          await m.addColumn(mediaFiles, mediaFiles.backdropPath);
+          await m.addColumn(mediaFiles, mediaFiles.releaseYear);
+          await m.addColumn(mediaFiles, mediaFiles.voteAverage);
+          await m.addColumn(mediaFiles, mediaFiles.genres);
+          await m.addColumn(mediaFiles, mediaFiles.originalLanguage);
         }
       },
     );
@@ -153,5 +165,73 @@ class AppDatabase extends _$AppDatabase {
       ..where((t) => t.libraryFolderId.equals(folderId));
     final rows = await query.get();
     return rows.map((r) => r.filePath).toList();
+  }
+
+  // ─── Phase 4: Metadata queries ──────────────────────────────────────────
+
+  /// Get all media files that have not been matched to TMDB yet (or failed previously).
+  Future<List<MediaFile>> getUnmatchedMediaFiles() {
+    return (select(mediaFiles)
+          ..where((t) => t.tmdbId.isNull() | t.tmdbId.equals(-1)))
+        .get();
+  }
+
+  /// Update TMDB metadata for a specific media file.
+  Future<void> updateMetadata({
+    required int fileId,
+    required int tmdbId,
+    required String resolvedMediaType,
+    String? tmdbTitle,
+    String? overview,
+    String? posterPath,
+    String? backdropPath,
+    int? releaseYear,
+    double? voteAverage,
+    String? genres,
+    String? originalLanguage,
+  }) async {
+    await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
+      MediaFilesCompanion(
+        tmdbId: Value(tmdbId),
+        mediaType: Value(resolvedMediaType),
+        tmdbTitle: Value(tmdbTitle),
+        overview: Value(overview),
+        posterPath: Value(posterPath),
+        backdropPath: Value(backdropPath),
+        releaseYear: Value(releaseYear),
+        voteAverage: Value(voteAverage),
+        genres: Value(genres),
+        originalLanguage: Value(originalLanguage),
+      ),
+    );
+  }
+
+  /// Mark a file as uncategorized (no TMDB match found).
+  /// Sets tmdbId to -1 so it won't be retried automatically.
+  Future<void> markAsUncategorized(int fileId) async {
+    await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
+      const MediaFilesCompanion(
+        tmdbId: Value(-1),
+        mediaType: Value('uncategorized'),
+      ),
+    );
+  }
+
+  /// Clear all metadata (for re-fetch).
+  Future<void> clearAllMetadata() async {
+    await (update(mediaFiles)).write(
+      const MediaFilesCompanion(
+        tmdbId: Value(null),
+        mediaType: Value(null),
+        tmdbTitle: Value(null),
+        overview: Value(null),
+        posterPath: Value(null),
+        backdropPath: Value(null),
+        releaseYear: Value(null),
+        voteAverage: Value(null),
+        genres: Value(null),
+        originalLanguage: Value(null),
+      ),
+    );
   }
 }

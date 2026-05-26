@@ -1,9 +1,11 @@
 /// A wider card with a progress bar for the "Continue Watching" row.
 ///
-/// Shows a thumbnail-style gradient, title, time remaining label, and
-/// a slim progress bar at the bottom edge.
+/// Shows a TMDB backdrop/poster thumbnail when available, falling back to
+/// a gradient. Includes title, time remaining label, and a slim progress
+/// bar at the bottom edge.
 library;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
@@ -38,6 +40,8 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
     final item = widget.item;
     final colors = item.posterGradientColors;
     final remaining = item.durationMinutes - item.watchedMinutes;
+    // Prefer backdrop for the wider card, fall back to poster
+    final thumbnailUrl = item.backdropUrl ?? item.posterUrl;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -70,16 +74,16 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ── Gradient thumbnail ──
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(colors[0]), Color(colors[1])],
-                    ),
-                  ),
-                ),
+                // ── Thumbnail image or gradient ──
+                if (thumbnailUrl != null)
+                  CachedNetworkImage(
+                    imageUrl: thumbnailUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => _GradientThumbnail(colors: colors),
+                    errorWidget: (context, url, error) => _GradientThumbnail(colors: colors),
+                  )
+                else
+                  _GradientThumbnail(colors: colors),
 
                 // ── Darkening overlay ──
                 Container(color: Colors.black.withValues(alpha: 0.25)),
@@ -183,6 +187,25 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Gradient thumbnail fallback for continue watching cards.
+class _GradientThumbnail extends StatelessWidget {
+  const _GradientThumbnail({required this.colors});
+  final List<int> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(colors[0]), Color(colors[1])],
         ),
       ),
     );

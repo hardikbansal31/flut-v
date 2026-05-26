@@ -14,6 +14,7 @@ import 'package:flutter_video/features/library/library_providers.dart';
 import 'dart:io';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_video/features/metadata/metadata_providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,12 +29,18 @@ void main() async {
 
   final database = AppDatabase();
 
+  final container = ProviderContainer(
+    overrides: [
+      databaseProvider.overrideWithValue(database),
+    ],
+  );
+
+  // Load TMDB API key from SharedPreferences before running the app
+  await container.read(tmdbApiKeyProvider.notifier).load();
+
   runApp(
-    // Riverpod root — all providers are available below this point.
-    ProviderScope(
-      overrides: [
-        databaseProvider.overrideWithValue(database),
-      ],
+    UncontrolledProviderScope(
+      container: container,
       child: const FluxPlayerApp(),
     ),
   );

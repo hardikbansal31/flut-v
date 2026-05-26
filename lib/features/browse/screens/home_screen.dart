@@ -4,20 +4,21 @@
 ///   1. Hero banner carousel (top)
 ///   2. Continue Watching horizontal row
 ///   3. Recently Added horizontal row
-///   4. Movies grid
-///   5. TV Shows grid
+///   4. Category grids (Movies, TV Shows, Anime, Uncategorized)
 ///
 /// Uses a transparent app bar that fades in a background as the user scrolls.
+/// Shows a persistent bottom indicator during metadata fetching.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
-import 'package:flutter_video/features/browse/data/dummy_data.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/settings/library_management_screen.dart';
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
+import 'package:flutter_video/features/metadata/metadata_providers.dart';
+import 'package:flutter_video/features/metadata/metadata_service.dart';
 import 'package:flutter_video/features/browse/widgets/continue_watching_card.dart';
 import 'package:flutter_video/features/browse/widgets/hero_banner.dart';
 import 'package:flutter_video/features/browse/widgets/horizontal_media_row.dart';
@@ -64,10 +65,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final allMediaFilesAsync = ref.watch(allMediaFilesProvider);
     final continueWatchingFiles = ref.watch(continueWatchingFilesProvider);
     final isScanning = ref.watch(scanningStateProvider);
+    final fetchStatus = ref.watch(metadataFetchProvider);
+
+    // Show error snackbar when metadata fetch errors occur
+    ref.listen<MetadataFetchStatus>(metadataFetchProvider, (previous, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red[800],
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    });
 
     final recentlyAdded = recentlyAddedAsync.value?.map(MediaItem.fromMediaFile).toList() ?? [];
     final allMediaFiles = allMediaFilesAsync.value?.map(MediaItem.fromMediaFile).toList() ?? [];
     final continueWatching = continueWatchingFiles.map(MediaItem.fromMediaFile).toList();
+    final heroItems = allMediaFiles.take(5).toList();
+
+    final movieFiles = allMediaFiles.where((item) => item.type == MediaType.movie).toList();
+    final tvShowFiles = allMediaFiles.where((item) => item.type == MediaType.tvShow).toList();
+    final animeFiles = allMediaFiles.where((item) => item.type == MediaType.anime).toList();
+    final uncategorizedFiles = allMediaFiles.where((item) => item.type == MediaType.uncategorized).toList();
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -145,9 +167,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Hero banner
-            HeroBanner(items: heroBannerItems),
-
-            const SizedBox(height: 28),
+            if (heroItems.isNotEmpty) ...[
+              HeroBanner(
+                items: heroItems,
+                onPlay: (item) {
+                  final files = allMediaFilesAsync.value;
+                  if (files != null) {
+                    final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlayerScreen(mediaFile: matchingFile),
+                      ),
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 28),
+            ],
 
             // 2. Continue Watching (Real Data)
             if (continueWatching.isNotEmpty)
@@ -200,40 +237,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             if (recentlyAdded.isNotEmpty) const SizedBox(height: 36),
 
-            // 4. Movies grid (Real Data)
-            if (allMediaFiles.isNotEmpty)
+            // 4. Movies grid
+            if (movieFiles.isNotEmpty)
               MediaGrid(
                 title: 'Movies',
-                items: allMediaFiles,
+                items: movieFiles,
                 onSeeAll: () {},
                 onItemTap: (index) {
+                  final item = movieFiles[index];
                   final files = allMediaFilesAsync.value;
                   if (files != null) {
+                    final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PlayerScreen(mediaFile: files[index]),
+                        builder: (context) => PlayerScreen(mediaFile: matchingFile),
                       ),
                     );
                   }
                 },
               ),
 
-            if (allMediaFiles.isNotEmpty) const SizedBox(height: 36),
+            if (movieFiles.isNotEmpty) const SizedBox(height: 36),
 
-            // 5. TV Shows grid (Real Data - duplicated for now per user request)
-            if (allMediaFiles.isNotEmpty)
+            // 5. TV Shows grid
+            if (tvShowFiles.isNotEmpty)
               MediaGrid(
                 title: 'TV Shows',
-                items: allMediaFiles,
+                items: tvShowFiles,
                 onSeeAll: () {},
                 onItemTap: (index) {
+                  final item = tvShowFiles[index];
                   final files = allMediaFilesAsync.value;
                   if (files != null) {
+                    final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PlayerScreen(mediaFile: files[index]),
+                        builder: (context) => PlayerScreen(mediaFile: matchingFile),
+                      ),
+                    );
+                  }
+                },
+              ),
+
+            if (tvShowFiles.isNotEmpty) const SizedBox(height: 36),
+
+            // 6. Anime grid
+            if (animeFiles.isNotEmpty)
+              MediaGrid(
+                title: 'Anime',
+                items: animeFiles,
+                onSeeAll: () {},
+                onItemTap: (index) {
+                  final item = animeFiles[index];
+                  final files = allMediaFilesAsync.value;
+                  if (files != null) {
+                    final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlayerScreen(mediaFile: matchingFile),
+                      ),
+                    );
+                  }
+                },
+              ),
+
+            if (animeFiles.isNotEmpty) const SizedBox(height: 36),
+
+            // 7. Uncategorized grid
+            if (uncategorizedFiles.isNotEmpty)
+              MediaGrid(
+                title: 'Uncategorized',
+                items: uncategorizedFiles,
+                onSeeAll: () {},
+                onItemTap: (index) {
+                  final item = uncategorizedFiles[index];
+                  final files = allMediaFilesAsync.value;
+                  if (files != null) {
+                    final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlayerScreen(mediaFile: matchingFile),
                       ),
                     );
                   }
@@ -305,6 +392,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+
+      // ── Persistent bottom fetch indicator ──
+      bottomNavigationBar: fetchStatus.isFetching
+          ? Container(
+              color: kSurfaceColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(kAccentColor),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Fetching metadata\u2026 ${fetchStatus.remainingFiles} remaining',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${fetchStatus.processedFiles}/${fetchStatus.totalFiles}',
+                      style: const TextStyle(
+                        color: kMutedText,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

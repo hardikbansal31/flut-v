@@ -27,6 +27,10 @@ dependencies:
   media_kit_libs_video: ^1.0.4
   window_manager: ^0.5.1
 
+  # Phase 4 — TMDB metadata
+  http: ^1.4.0
+  shared_preferences: ^2.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

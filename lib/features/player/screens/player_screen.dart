@@ -68,7 +68,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       await native.setProperty('sub-font', 'Arial');
       await native.setProperty('sub-font-size', '48');
       await native.setProperty('sub-color', '#FFFFFFFF');
-      await native.setProperty('sub-border-size', '3');
+      await native.setProperty('sub-border-size', '4');
       await native.setProperty('sub-border-color', '#FF000000');
       await native.setProperty('sub-shadow-offset', '0');
       await native.setProperty('sub-margin-y', '22');
@@ -261,15 +261,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 fontWeight: FontWeight.normal,
                 backgroundColor: Colors.transparent,
                 shadows: [
-                  // Simulates a uniform 3 px border with 8-directional shadows.
-                  Shadow(offset: Offset(3.0, 0.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(-3.0, 0.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(0.0, 3.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(0.0, -3.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(2.1, 2.1), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(-2.1, 2.1), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(2.1, -2.1), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(-2.1, -2.1), blurRadius: 0.0, color: Colors.black),
+                  // Simulates a uniform 4 px border with 8-directional shadows.
+                  Shadow(offset: Offset(4.0, 0.0), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(-4.0, 0.0), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(0.0, 4.0), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(0.0, -4.0), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(2.8, 2.8), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(-2.8, 2.8), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(2.8, -2.8), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(-2.8, -2.8), blurRadius: 0.0, color: Colors.black),
                 ],
               ),
               padding: const EdgeInsets.only(bottom: 22.0),

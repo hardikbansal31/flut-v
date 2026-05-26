@@ -1,10 +1,10 @@
 /// A standard poster-style media card.
 ///
-/// Renders a gradient placeholder with the movie title overlaid.
-/// In Phase 4, the gradient will be replaced by a cached TMDB poster.
-/// Includes hover / focus elevation animation for desktop UIs.
+/// Shows a TMDB poster image when available, falling back to a gradient
+/// placeholder. Includes hover / focus elevation animation for desktop UIs.
 library;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
@@ -34,6 +34,7 @@ class _MediaCardState extends State<MediaCard>
   @override
   Widget build(BuildContext context) {
     final colors = widget.item.posterGradientColors;
+    final hasPoster = widget.item.posterUrl != null;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
@@ -66,32 +67,25 @@ class _MediaCardState extends State<MediaCard>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ── Gradient poster placeholder ──
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(colors[0]), Color(colors[1])],
+                // ── Poster image or gradient fallback ──
+                if (hasPoster)
+                  CachedNetworkImage(
+                    imageUrl: widget.item.posterUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => _GradientPlaceholder(
+                      colors: colors,
+                      type: widget.item.type,
                     ),
+                    errorWidget: (context, url, error) => _GradientPlaceholder(
+                      colors: colors,
+                      type: widget.item.type,
+                    ),
+                  )
+                else
+                  _GradientPlaceholder(
+                    colors: colors,
+                    type: widget.item.type,
                   ),
-                ),
-
-                // ── Film-grain style noise overlay ──
-                Container(
-                  color: Colors.black.withValues(alpha: 0.15),
-                ),
-
-                // ── Icon watermark ──
-                Center(
-                  child: Icon(
-                    widget.item.type == MediaType.tvShow
-                        ? Icons.live_tv_rounded
-                        : Icons.movie_rounded,
-                    size: 40,
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                ),
 
                 // ── Bottom info gradient ──
                 Positioned(
@@ -172,6 +166,46 @@ class _MediaCardState extends State<MediaCard>
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Gradient placeholder shown when no poster image is available or while loading.
+class _GradientPlaceholder extends StatelessWidget {
+  const _GradientPlaceholder({required this.colors, required this.type});
+
+  final List<int> colors;
+  final MediaType type;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(colors[0]), Color(colors[1])],
+            ),
+          ),
+        ),
+        // Film-grain style noise overlay
+        Container(color: Colors.black.withValues(alpha: 0.15)),
+        // Icon watermark
+        Center(
+          child: Icon(
+            type == MediaType.tvShow
+                ? Icons.live_tv_rounded
+                : type == MediaType.anime
+                    ? Icons.animation_rounded
+                    : Icons.movie_rounded,
+            size: 40,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
+      ],
     );
   }
 }

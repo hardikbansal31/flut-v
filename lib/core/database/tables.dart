@@ -1,8 +1,9 @@
 /// Drift table definitions for the FluxPlayer database.
 ///
-/// Phase 2 tables:
+/// Tables:
 ///   - [LibraryFolders] — user-configured root directories to scan
-///   - [MediaFiles] — individual video files discovered by the scanner
+///   - [MediaFiles] — individual video files discovered by the scanner,
+///     with optional TMDB metadata columns (Phase 4)
 library;
 
 import 'package:drift/drift.dart';
@@ -60,4 +61,36 @@ class MediaFiles extends Table {
 
   /// Last watched position in milliseconds (Phase 3).
   IntColumn get positionMillis => integer().nullable()();
+
+  // ── Phase 4: TMDB metadata columns ──────────────────────────────────────
+
+  /// TMDB ID for this media. Non-null means metadata has been matched.
+  IntColumn get tmdbId => integer().nullable()();
+
+  /// Resolved media type: 'movie', 'tv', 'anime', or 'uncategorized'.
+  TextColumn get mediaType => text().nullable()();
+
+  /// TMDB display title (falls back to [fileName] in the UI).
+  TextColumn get tmdbTitle => text().nullable()();
+
+  /// Plot synopsis from TMDB.
+  TextColumn get overview => text().nullable()();
+
+  /// TMDB poster path (e.g. `/abc123.jpg`). Combine with base URL to get full URL.
+  TextColumn get posterPath => text().nullable()();
+
+  /// TMDB backdrop path. Combine with base URL to get full URL.
+  TextColumn get backdropPath => text().nullable()();
+
+  /// Release year extracted from TMDB release_date / first_air_date.
+  IntColumn get releaseYear => integer().nullable()();
+
+  /// TMDB vote average (0.0–10.0).
+  RealColumn get voteAverage => real().nullable()();
+
+  /// Comma-separated genre names (e.g. "Action,Sci-Fi,Drama").
+  TextColumn get genres => text().nullable()();
+
+  /// Original language code from TMDB (e.g. "en", "ja").
+  TextColumn get originalLanguage => text().nullable()();
 }

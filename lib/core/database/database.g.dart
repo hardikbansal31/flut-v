@@ -429,6 +429,112 @@ class $MediaFilesTable extends MediaFiles
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tmdbIdMeta = const VerificationMeta('tmdbId');
+  @override
+  late final GeneratedColumn<int> tmdbId = GeneratedColumn<int>(
+    'tmdb_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mediaTypeMeta = const VerificationMeta(
+    'mediaType',
+  );
+  @override
+  late final GeneratedColumn<String> mediaType = GeneratedColumn<String>(
+    'media_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tmdbTitleMeta = const VerificationMeta(
+    'tmdbTitle',
+  );
+  @override
+  late final GeneratedColumn<String> tmdbTitle = GeneratedColumn<String>(
+    'tmdb_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _overviewMeta = const VerificationMeta(
+    'overview',
+  );
+  @override
+  late final GeneratedColumn<String> overview = GeneratedColumn<String>(
+    'overview',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _posterPathMeta = const VerificationMeta(
+    'posterPath',
+  );
+  @override
+  late final GeneratedColumn<String> posterPath = GeneratedColumn<String>(
+    'poster_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _backdropPathMeta = const VerificationMeta(
+    'backdropPath',
+  );
+  @override
+  late final GeneratedColumn<String> backdropPath = GeneratedColumn<String>(
+    'backdrop_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _releaseYearMeta = const VerificationMeta(
+    'releaseYear',
+  );
+  @override
+  late final GeneratedColumn<int> releaseYear = GeneratedColumn<int>(
+    'release_year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _voteAverageMeta = const VerificationMeta(
+    'voteAverage',
+  );
+  @override
+  late final GeneratedColumn<double> voteAverage = GeneratedColumn<double>(
+    'vote_average',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _genresMeta = const VerificationMeta('genres');
+  @override
+  late final GeneratedColumn<String> genres = GeneratedColumn<String>(
+    'genres',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originalLanguageMeta = const VerificationMeta(
+    'originalLanguage',
+  );
+  @override
+  late final GeneratedColumn<String> originalLanguage = GeneratedColumn<String>(
+    'original_language',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -441,6 +547,16 @@ class $MediaFilesTable extends MediaFiles
     lastModified,
     durationMillis,
     positionMillis,
+    tmdbId,
+    mediaType,
+    tmdbTitle,
+    overview,
+    posterPath,
+    backdropPath,
+    releaseYear,
+    voteAverage,
+    genres,
+    originalLanguage,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -541,6 +657,78 @@ class $MediaFilesTable extends MediaFiles
         ),
       );
     }
+    if (data.containsKey('tmdb_id')) {
+      context.handle(
+        _tmdbIdMeta,
+        tmdbId.isAcceptableOrUnknown(data['tmdb_id']!, _tmdbIdMeta),
+      );
+    }
+    if (data.containsKey('media_type')) {
+      context.handle(
+        _mediaTypeMeta,
+        mediaType.isAcceptableOrUnknown(data['media_type']!, _mediaTypeMeta),
+      );
+    }
+    if (data.containsKey('tmdb_title')) {
+      context.handle(
+        _tmdbTitleMeta,
+        tmdbTitle.isAcceptableOrUnknown(data['tmdb_title']!, _tmdbTitleMeta),
+      );
+    }
+    if (data.containsKey('overview')) {
+      context.handle(
+        _overviewMeta,
+        overview.isAcceptableOrUnknown(data['overview']!, _overviewMeta),
+      );
+    }
+    if (data.containsKey('poster_path')) {
+      context.handle(
+        _posterPathMeta,
+        posterPath.isAcceptableOrUnknown(data['poster_path']!, _posterPathMeta),
+      );
+    }
+    if (data.containsKey('backdrop_path')) {
+      context.handle(
+        _backdropPathMeta,
+        backdropPath.isAcceptableOrUnknown(
+          data['backdrop_path']!,
+          _backdropPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('release_year')) {
+      context.handle(
+        _releaseYearMeta,
+        releaseYear.isAcceptableOrUnknown(
+          data['release_year']!,
+          _releaseYearMeta,
+        ),
+      );
+    }
+    if (data.containsKey('vote_average')) {
+      context.handle(
+        _voteAverageMeta,
+        voteAverage.isAcceptableOrUnknown(
+          data['vote_average']!,
+          _voteAverageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('genres')) {
+      context.handle(
+        _genresMeta,
+        genres.isAcceptableOrUnknown(data['genres']!, _genresMeta),
+      );
+    }
+    if (data.containsKey('original_language')) {
+      context.handle(
+        _originalLanguageMeta,
+        originalLanguage.isAcceptableOrUnknown(
+          data['original_language']!,
+          _originalLanguageMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -590,6 +778,46 @@ class $MediaFilesTable extends MediaFiles
         DriftSqlType.int,
         data['${effectivePrefix}position_millis'],
       ),
+      tmdbId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tmdb_id'],
+      ),
+      mediaType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}media_type'],
+      ),
+      tmdbTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tmdb_title'],
+      ),
+      overview: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}overview'],
+      ),
+      posterPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}poster_path'],
+      ),
+      backdropPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}backdrop_path'],
+      ),
+      releaseYear: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}release_year'],
+      ),
+      voteAverage: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}vote_average'],
+      ),
+      genres: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}genres'],
+      ),
+      originalLanguage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_language'],
+      ),
     );
   }
 
@@ -629,6 +857,36 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
 
   /// Last watched position in milliseconds (Phase 3).
   final int? positionMillis;
+
+  /// TMDB ID for this media. Non-null means metadata has been matched.
+  final int? tmdbId;
+
+  /// Resolved media type: 'movie', 'tv', 'anime', or 'uncategorized'.
+  final String? mediaType;
+
+  /// TMDB display title (falls back to [fileName] in the UI).
+  final String? tmdbTitle;
+
+  /// Plot synopsis from TMDB.
+  final String? overview;
+
+  /// TMDB poster path (e.g. `/abc123.jpg`). Combine with base URL to get full URL.
+  final String? posterPath;
+
+  /// TMDB backdrop path. Combine with base URL to get full URL.
+  final String? backdropPath;
+
+  /// Release year extracted from TMDB release_date / first_air_date.
+  final int? releaseYear;
+
+  /// TMDB vote average (0.0–10.0).
+  final double? voteAverage;
+
+  /// Comma-separated genre names (e.g. "Action,Sci-Fi,Drama").
+  final String? genres;
+
+  /// Original language code from TMDB (e.g. "en", "ja").
+  final String? originalLanguage;
   const MediaFile({
     required this.id,
     required this.filePath,
@@ -640,6 +898,16 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     required this.lastModified,
     this.durationMillis,
     this.positionMillis,
+    this.tmdbId,
+    this.mediaType,
+    this.tmdbTitle,
+    this.overview,
+    this.posterPath,
+    this.backdropPath,
+    this.releaseYear,
+    this.voteAverage,
+    this.genres,
+    this.originalLanguage,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -657,6 +925,36 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     }
     if (!nullToAbsent || positionMillis != null) {
       map['position_millis'] = Variable<int>(positionMillis);
+    }
+    if (!nullToAbsent || tmdbId != null) {
+      map['tmdb_id'] = Variable<int>(tmdbId);
+    }
+    if (!nullToAbsent || mediaType != null) {
+      map['media_type'] = Variable<String>(mediaType);
+    }
+    if (!nullToAbsent || tmdbTitle != null) {
+      map['tmdb_title'] = Variable<String>(tmdbTitle);
+    }
+    if (!nullToAbsent || overview != null) {
+      map['overview'] = Variable<String>(overview);
+    }
+    if (!nullToAbsent || posterPath != null) {
+      map['poster_path'] = Variable<String>(posterPath);
+    }
+    if (!nullToAbsent || backdropPath != null) {
+      map['backdrop_path'] = Variable<String>(backdropPath);
+    }
+    if (!nullToAbsent || releaseYear != null) {
+      map['release_year'] = Variable<int>(releaseYear);
+    }
+    if (!nullToAbsent || voteAverage != null) {
+      map['vote_average'] = Variable<double>(voteAverage);
+    }
+    if (!nullToAbsent || genres != null) {
+      map['genres'] = Variable<String>(genres);
+    }
+    if (!nullToAbsent || originalLanguage != null) {
+      map['original_language'] = Variable<String>(originalLanguage);
     }
     return map;
   }
@@ -677,6 +975,36 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       positionMillis: positionMillis == null && nullToAbsent
           ? const Value.absent()
           : Value(positionMillis),
+      tmdbId: tmdbId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tmdbId),
+      mediaType: mediaType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaType),
+      tmdbTitle: tmdbTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tmdbTitle),
+      overview: overview == null && nullToAbsent
+          ? const Value.absent()
+          : Value(overview),
+      posterPath: posterPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(posterPath),
+      backdropPath: backdropPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(backdropPath),
+      releaseYear: releaseYear == null && nullToAbsent
+          ? const Value.absent()
+          : Value(releaseYear),
+      voteAverage: voteAverage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voteAverage),
+      genres: genres == null && nullToAbsent
+          ? const Value.absent()
+          : Value(genres),
+      originalLanguage: originalLanguage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalLanguage),
     );
   }
 
@@ -696,6 +1024,16 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
       durationMillis: serializer.fromJson<int?>(json['durationMillis']),
       positionMillis: serializer.fromJson<int?>(json['positionMillis']),
+      tmdbId: serializer.fromJson<int?>(json['tmdbId']),
+      mediaType: serializer.fromJson<String?>(json['mediaType']),
+      tmdbTitle: serializer.fromJson<String?>(json['tmdbTitle']),
+      overview: serializer.fromJson<String?>(json['overview']),
+      posterPath: serializer.fromJson<String?>(json['posterPath']),
+      backdropPath: serializer.fromJson<String?>(json['backdropPath']),
+      releaseYear: serializer.fromJson<int?>(json['releaseYear']),
+      voteAverage: serializer.fromJson<double?>(json['voteAverage']),
+      genres: serializer.fromJson<String?>(json['genres']),
+      originalLanguage: serializer.fromJson<String?>(json['originalLanguage']),
     );
   }
   @override
@@ -712,6 +1050,16 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       'lastModified': serializer.toJson<DateTime>(lastModified),
       'durationMillis': serializer.toJson<int?>(durationMillis),
       'positionMillis': serializer.toJson<int?>(positionMillis),
+      'tmdbId': serializer.toJson<int?>(tmdbId),
+      'mediaType': serializer.toJson<String?>(mediaType),
+      'tmdbTitle': serializer.toJson<String?>(tmdbTitle),
+      'overview': serializer.toJson<String?>(overview),
+      'posterPath': serializer.toJson<String?>(posterPath),
+      'backdropPath': serializer.toJson<String?>(backdropPath),
+      'releaseYear': serializer.toJson<int?>(releaseYear),
+      'voteAverage': serializer.toJson<double?>(voteAverage),
+      'genres': serializer.toJson<String?>(genres),
+      'originalLanguage': serializer.toJson<String?>(originalLanguage),
     };
   }
 
@@ -726,6 +1074,16 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     DateTime? lastModified,
     Value<int?> durationMillis = const Value.absent(),
     Value<int?> positionMillis = const Value.absent(),
+    Value<int?> tmdbId = const Value.absent(),
+    Value<String?> mediaType = const Value.absent(),
+    Value<String?> tmdbTitle = const Value.absent(),
+    Value<String?> overview = const Value.absent(),
+    Value<String?> posterPath = const Value.absent(),
+    Value<String?> backdropPath = const Value.absent(),
+    Value<int?> releaseYear = const Value.absent(),
+    Value<double?> voteAverage = const Value.absent(),
+    Value<String?> genres = const Value.absent(),
+    Value<String?> originalLanguage = const Value.absent(),
   }) => MediaFile(
     id: id ?? this.id,
     filePath: filePath ?? this.filePath,
@@ -741,6 +1099,18 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     positionMillis: positionMillis.present
         ? positionMillis.value
         : this.positionMillis,
+    tmdbId: tmdbId.present ? tmdbId.value : this.tmdbId,
+    mediaType: mediaType.present ? mediaType.value : this.mediaType,
+    tmdbTitle: tmdbTitle.present ? tmdbTitle.value : this.tmdbTitle,
+    overview: overview.present ? overview.value : this.overview,
+    posterPath: posterPath.present ? posterPath.value : this.posterPath,
+    backdropPath: backdropPath.present ? backdropPath.value : this.backdropPath,
+    releaseYear: releaseYear.present ? releaseYear.value : this.releaseYear,
+    voteAverage: voteAverage.present ? voteAverage.value : this.voteAverage,
+    genres: genres.present ? genres.value : this.genres,
+    originalLanguage: originalLanguage.present
+        ? originalLanguage.value
+        : this.originalLanguage,
   );
   MediaFile copyWithCompanion(MediaFilesCompanion data) {
     return MediaFile(
@@ -766,6 +1136,26 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       positionMillis: data.positionMillis.present
           ? data.positionMillis.value
           : this.positionMillis,
+      tmdbId: data.tmdbId.present ? data.tmdbId.value : this.tmdbId,
+      mediaType: data.mediaType.present ? data.mediaType.value : this.mediaType,
+      tmdbTitle: data.tmdbTitle.present ? data.tmdbTitle.value : this.tmdbTitle,
+      overview: data.overview.present ? data.overview.value : this.overview,
+      posterPath: data.posterPath.present
+          ? data.posterPath.value
+          : this.posterPath,
+      backdropPath: data.backdropPath.present
+          ? data.backdropPath.value
+          : this.backdropPath,
+      releaseYear: data.releaseYear.present
+          ? data.releaseYear.value
+          : this.releaseYear,
+      voteAverage: data.voteAverage.present
+          ? data.voteAverage.value
+          : this.voteAverage,
+      genres: data.genres.present ? data.genres.value : this.genres,
+      originalLanguage: data.originalLanguage.present
+          ? data.originalLanguage.value
+          : this.originalLanguage,
     );
   }
 
@@ -781,7 +1171,17 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           ..write('addedAt: $addedAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('durationMillis: $durationMillis, ')
-          ..write('positionMillis: $positionMillis')
+          ..write('positionMillis: $positionMillis, ')
+          ..write('tmdbId: $tmdbId, ')
+          ..write('mediaType: $mediaType, ')
+          ..write('tmdbTitle: $tmdbTitle, ')
+          ..write('overview: $overview, ')
+          ..write('posterPath: $posterPath, ')
+          ..write('backdropPath: $backdropPath, ')
+          ..write('releaseYear: $releaseYear, ')
+          ..write('voteAverage: $voteAverage, ')
+          ..write('genres: $genres, ')
+          ..write('originalLanguage: $originalLanguage')
           ..write(')'))
         .toString();
   }
@@ -798,6 +1198,16 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     lastModified,
     durationMillis,
     positionMillis,
+    tmdbId,
+    mediaType,
+    tmdbTitle,
+    overview,
+    posterPath,
+    backdropPath,
+    releaseYear,
+    voteAverage,
+    genres,
+    originalLanguage,
   );
   @override
   bool operator ==(Object other) =>
@@ -812,7 +1222,17 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           other.addedAt == this.addedAt &&
           other.lastModified == this.lastModified &&
           other.durationMillis == this.durationMillis &&
-          other.positionMillis == this.positionMillis);
+          other.positionMillis == this.positionMillis &&
+          other.tmdbId == this.tmdbId &&
+          other.mediaType == this.mediaType &&
+          other.tmdbTitle == this.tmdbTitle &&
+          other.overview == this.overview &&
+          other.posterPath == this.posterPath &&
+          other.backdropPath == this.backdropPath &&
+          other.releaseYear == this.releaseYear &&
+          other.voteAverage == this.voteAverage &&
+          other.genres == this.genres &&
+          other.originalLanguage == this.originalLanguage);
 }
 
 class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
@@ -826,6 +1246,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
   final Value<DateTime> lastModified;
   final Value<int?> durationMillis;
   final Value<int?> positionMillis;
+  final Value<int?> tmdbId;
+  final Value<String?> mediaType;
+  final Value<String?> tmdbTitle;
+  final Value<String?> overview;
+  final Value<String?> posterPath;
+  final Value<String?> backdropPath;
+  final Value<int?> releaseYear;
+  final Value<double?> voteAverage;
+  final Value<String?> genres;
+  final Value<String?> originalLanguage;
   const MediaFilesCompanion({
     this.id = const Value.absent(),
     this.filePath = const Value.absent(),
@@ -837,6 +1267,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     this.lastModified = const Value.absent(),
     this.durationMillis = const Value.absent(),
     this.positionMillis = const Value.absent(),
+    this.tmdbId = const Value.absent(),
+    this.mediaType = const Value.absent(),
+    this.tmdbTitle = const Value.absent(),
+    this.overview = const Value.absent(),
+    this.posterPath = const Value.absent(),
+    this.backdropPath = const Value.absent(),
+    this.releaseYear = const Value.absent(),
+    this.voteAverage = const Value.absent(),
+    this.genres = const Value.absent(),
+    this.originalLanguage = const Value.absent(),
   });
   MediaFilesCompanion.insert({
     this.id = const Value.absent(),
@@ -849,6 +1289,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     required DateTime lastModified,
     this.durationMillis = const Value.absent(),
     this.positionMillis = const Value.absent(),
+    this.tmdbId = const Value.absent(),
+    this.mediaType = const Value.absent(),
+    this.tmdbTitle = const Value.absent(),
+    this.overview = const Value.absent(),
+    this.posterPath = const Value.absent(),
+    this.backdropPath = const Value.absent(),
+    this.releaseYear = const Value.absent(),
+    this.voteAverage = const Value.absent(),
+    this.genres = const Value.absent(),
+    this.originalLanguage = const Value.absent(),
   }) : filePath = Value(filePath),
        fileName = Value(fileName),
        fileExtension = Value(fileExtension),
@@ -866,6 +1316,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Expression<DateTime>? lastModified,
     Expression<int>? durationMillis,
     Expression<int>? positionMillis,
+    Expression<int>? tmdbId,
+    Expression<String>? mediaType,
+    Expression<String>? tmdbTitle,
+    Expression<String>? overview,
+    Expression<String>? posterPath,
+    Expression<String>? backdropPath,
+    Expression<int>? releaseYear,
+    Expression<double>? voteAverage,
+    Expression<String>? genres,
+    Expression<String>? originalLanguage,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -878,6 +1338,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       if (lastModified != null) 'last_modified': lastModified,
       if (durationMillis != null) 'duration_millis': durationMillis,
       if (positionMillis != null) 'position_millis': positionMillis,
+      if (tmdbId != null) 'tmdb_id': tmdbId,
+      if (mediaType != null) 'media_type': mediaType,
+      if (tmdbTitle != null) 'tmdb_title': tmdbTitle,
+      if (overview != null) 'overview': overview,
+      if (posterPath != null) 'poster_path': posterPath,
+      if (backdropPath != null) 'backdrop_path': backdropPath,
+      if (releaseYear != null) 'release_year': releaseYear,
+      if (voteAverage != null) 'vote_average': voteAverage,
+      if (genres != null) 'genres': genres,
+      if (originalLanguage != null) 'original_language': originalLanguage,
     });
   }
 
@@ -892,6 +1362,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Value<DateTime>? lastModified,
     Value<int?>? durationMillis,
     Value<int?>? positionMillis,
+    Value<int?>? tmdbId,
+    Value<String?>? mediaType,
+    Value<String?>? tmdbTitle,
+    Value<String?>? overview,
+    Value<String?>? posterPath,
+    Value<String?>? backdropPath,
+    Value<int?>? releaseYear,
+    Value<double?>? voteAverage,
+    Value<String?>? genres,
+    Value<String?>? originalLanguage,
   }) {
     return MediaFilesCompanion(
       id: id ?? this.id,
@@ -904,6 +1384,16 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       lastModified: lastModified ?? this.lastModified,
       durationMillis: durationMillis ?? this.durationMillis,
       positionMillis: positionMillis ?? this.positionMillis,
+      tmdbId: tmdbId ?? this.tmdbId,
+      mediaType: mediaType ?? this.mediaType,
+      tmdbTitle: tmdbTitle ?? this.tmdbTitle,
+      overview: overview ?? this.overview,
+      posterPath: posterPath ?? this.posterPath,
+      backdropPath: backdropPath ?? this.backdropPath,
+      releaseYear: releaseYear ?? this.releaseYear,
+      voteAverage: voteAverage ?? this.voteAverage,
+      genres: genres ?? this.genres,
+      originalLanguage: originalLanguage ?? this.originalLanguage,
     );
   }
 
@@ -940,6 +1430,36 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     if (positionMillis.present) {
       map['position_millis'] = Variable<int>(positionMillis.value);
     }
+    if (tmdbId.present) {
+      map['tmdb_id'] = Variable<int>(tmdbId.value);
+    }
+    if (mediaType.present) {
+      map['media_type'] = Variable<String>(mediaType.value);
+    }
+    if (tmdbTitle.present) {
+      map['tmdb_title'] = Variable<String>(tmdbTitle.value);
+    }
+    if (overview.present) {
+      map['overview'] = Variable<String>(overview.value);
+    }
+    if (posterPath.present) {
+      map['poster_path'] = Variable<String>(posterPath.value);
+    }
+    if (backdropPath.present) {
+      map['backdrop_path'] = Variable<String>(backdropPath.value);
+    }
+    if (releaseYear.present) {
+      map['release_year'] = Variable<int>(releaseYear.value);
+    }
+    if (voteAverage.present) {
+      map['vote_average'] = Variable<double>(voteAverage.value);
+    }
+    if (genres.present) {
+      map['genres'] = Variable<String>(genres.value);
+    }
+    if (originalLanguage.present) {
+      map['original_language'] = Variable<String>(originalLanguage.value);
+    }
     return map;
   }
 
@@ -955,7 +1475,17 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
           ..write('addedAt: $addedAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('durationMillis: $durationMillis, ')
-          ..write('positionMillis: $positionMillis')
+          ..write('positionMillis: $positionMillis, ')
+          ..write('tmdbId: $tmdbId, ')
+          ..write('mediaType: $mediaType, ')
+          ..write('tmdbTitle: $tmdbTitle, ')
+          ..write('overview: $overview, ')
+          ..write('posterPath: $posterPath, ')
+          ..write('backdropPath: $backdropPath, ')
+          ..write('releaseYear: $releaseYear, ')
+          ..write('voteAverage: $voteAverage, ')
+          ..write('genres: $genres, ')
+          ..write('originalLanguage: $originalLanguage')
           ..write(')'))
         .toString();
   }
@@ -1275,6 +1805,16 @@ typedef $$MediaFilesTableCreateCompanionBuilder =
       required DateTime lastModified,
       Value<int?> durationMillis,
       Value<int?> positionMillis,
+      Value<int?> tmdbId,
+      Value<String?> mediaType,
+      Value<String?> tmdbTitle,
+      Value<String?> overview,
+      Value<String?> posterPath,
+      Value<String?> backdropPath,
+      Value<int?> releaseYear,
+      Value<double?> voteAverage,
+      Value<String?> genres,
+      Value<String?> originalLanguage,
     });
 typedef $$MediaFilesTableUpdateCompanionBuilder =
     MediaFilesCompanion Function({
@@ -1288,6 +1828,16 @@ typedef $$MediaFilesTableUpdateCompanionBuilder =
       Value<DateTime> lastModified,
       Value<int?> durationMillis,
       Value<int?> positionMillis,
+      Value<int?> tmdbId,
+      Value<String?> mediaType,
+      Value<String?> tmdbTitle,
+      Value<String?> overview,
+      Value<String?> posterPath,
+      Value<String?> backdropPath,
+      Value<int?> releaseYear,
+      Value<double?> voteAverage,
+      Value<String?> genres,
+      Value<String?> originalLanguage,
     });
 
 final class $$MediaFilesTableReferences
@@ -1371,6 +1921,56 @@ class $$MediaFilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get tmdbId => $composableBuilder(
+    column: $table.tmdbId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mediaType => $composableBuilder(
+    column: $table.mediaType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tmdbTitle => $composableBuilder(
+    column: $table.tmdbTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get overview => $composableBuilder(
+    column: $table.overview,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get posterPath => $composableBuilder(
+    column: $table.posterPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get backdropPath => $composableBuilder(
+    column: $table.backdropPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get releaseYear => $composableBuilder(
+    column: $table.releaseYear,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get voteAverage => $composableBuilder(
+    column: $table.voteAverage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get genres => $composableBuilder(
+    column: $table.genres,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalLanguage => $composableBuilder(
+    column: $table.originalLanguage,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LibraryFoldersTableFilterComposer get libraryFolderId {
     final $$LibraryFoldersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -1449,6 +2049,56 @@ class $$MediaFilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get tmdbId => $composableBuilder(
+    column: $table.tmdbId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mediaType => $composableBuilder(
+    column: $table.mediaType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tmdbTitle => $composableBuilder(
+    column: $table.tmdbTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get overview => $composableBuilder(
+    column: $table.overview,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get posterPath => $composableBuilder(
+    column: $table.posterPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get backdropPath => $composableBuilder(
+    column: $table.backdropPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get releaseYear => $composableBuilder(
+    column: $table.releaseYear,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get voteAverage => $composableBuilder(
+    column: $table.voteAverage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get genres => $composableBuilder(
+    column: $table.genres,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originalLanguage => $composableBuilder(
+    column: $table.originalLanguage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LibraryFoldersTableOrderingComposer get libraryFolderId {
     final $$LibraryFoldersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -1519,6 +2169,46 @@ class $$MediaFilesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get tmdbId =>
+      $composableBuilder(column: $table.tmdbId, builder: (column) => column);
+
+  GeneratedColumn<String> get mediaType =>
+      $composableBuilder(column: $table.mediaType, builder: (column) => column);
+
+  GeneratedColumn<String> get tmdbTitle =>
+      $composableBuilder(column: $table.tmdbTitle, builder: (column) => column);
+
+  GeneratedColumn<String> get overview =>
+      $composableBuilder(column: $table.overview, builder: (column) => column);
+
+  GeneratedColumn<String> get posterPath => $composableBuilder(
+    column: $table.posterPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get backdropPath => $composableBuilder(
+    column: $table.backdropPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get releaseYear => $composableBuilder(
+    column: $table.releaseYear,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get voteAverage => $composableBuilder(
+    column: $table.voteAverage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get genres =>
+      $composableBuilder(column: $table.genres, builder: (column) => column);
+
+  GeneratedColumn<String> get originalLanguage => $composableBuilder(
+    column: $table.originalLanguage,
+    builder: (column) => column,
+  );
+
   $$LibraryFoldersTableAnnotationComposer get libraryFolderId {
     final $$LibraryFoldersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -1581,6 +2271,16 @@ class $$MediaFilesTableTableManager
                 Value<DateTime> lastModified = const Value.absent(),
                 Value<int?> durationMillis = const Value.absent(),
                 Value<int?> positionMillis = const Value.absent(),
+                Value<int?> tmdbId = const Value.absent(),
+                Value<String?> mediaType = const Value.absent(),
+                Value<String?> tmdbTitle = const Value.absent(),
+                Value<String?> overview = const Value.absent(),
+                Value<String?> posterPath = const Value.absent(),
+                Value<String?> backdropPath = const Value.absent(),
+                Value<int?> releaseYear = const Value.absent(),
+                Value<double?> voteAverage = const Value.absent(),
+                Value<String?> genres = const Value.absent(),
+                Value<String?> originalLanguage = const Value.absent(),
               }) => MediaFilesCompanion(
                 id: id,
                 filePath: filePath,
@@ -1592,6 +2292,16 @@ class $$MediaFilesTableTableManager
                 lastModified: lastModified,
                 durationMillis: durationMillis,
                 positionMillis: positionMillis,
+                tmdbId: tmdbId,
+                mediaType: mediaType,
+                tmdbTitle: tmdbTitle,
+                overview: overview,
+                posterPath: posterPath,
+                backdropPath: backdropPath,
+                releaseYear: releaseYear,
+                voteAverage: voteAverage,
+                genres: genres,
+                originalLanguage: originalLanguage,
               ),
           createCompanionCallback:
               ({
@@ -1605,6 +2315,16 @@ class $$MediaFilesTableTableManager
                 required DateTime lastModified,
                 Value<int?> durationMillis = const Value.absent(),
                 Value<int?> positionMillis = const Value.absent(),
+                Value<int?> tmdbId = const Value.absent(),
+                Value<String?> mediaType = const Value.absent(),
+                Value<String?> tmdbTitle = const Value.absent(),
+                Value<String?> overview = const Value.absent(),
+                Value<String?> posterPath = const Value.absent(),
+                Value<String?> backdropPath = const Value.absent(),
+                Value<int?> releaseYear = const Value.absent(),
+                Value<double?> voteAverage = const Value.absent(),
+                Value<String?> genres = const Value.absent(),
+                Value<String?> originalLanguage = const Value.absent(),
               }) => MediaFilesCompanion.insert(
                 id: id,
                 filePath: filePath,
@@ -1616,6 +2336,16 @@ class $$MediaFilesTableTableManager
                 lastModified: lastModified,
                 durationMillis: durationMillis,
                 positionMillis: positionMillis,
+                tmdbId: tmdbId,
+                mediaType: mediaType,
+                tmdbTitle: tmdbTitle,
+                overview: overview,
+                posterPath: posterPath,
+                backdropPath: backdropPath,
+                releaseYear: releaseYear,
+                voteAverage: voteAverage,
+                genres: genres,
+                originalLanguage: originalLanguage,
               ),
           withReferenceMapper: (p0) => p0
               .map(

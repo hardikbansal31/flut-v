@@ -1,19 +1,21 @@
 /// Full-width hero banner with auto-scrolling carousel.
 ///
-/// Displays a featured media item with a dramatic gradient backdrop,
-/// title, metadata chips, synopsis, and action buttons. Includes
-/// page indicators and auto-advances every 6 seconds.
+/// Displays a featured media item with a dramatic backdrop image (from TMDB)
+/// or gradient fallback, title, metadata chips, synopsis, and action buttons.
+/// Includes page indicators and auto-advances every 6 seconds.
 library;
 
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 
 class HeroBanner extends StatefulWidget {
-  const HeroBanner({super.key, required this.items});
+  const HeroBanner({super.key, required this.items, this.onPlay});
 
   final List<MediaItem> items;
+  final ValueChanged<MediaItem>? onPlay;
 
   @override
   State<HeroBanner> createState() => _HeroBannerState();
@@ -53,8 +55,8 @@ class _HeroBannerState extends State<HeroBanner> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    // Banner takes up ~55 % of screen height for cinematic impact.
-    final bannerHeight = screenHeight * 0.55;
+    // Banner takes up ~70 % of screen height for cinematic impact.
+    final bannerHeight = screenHeight * 0.70;
 
     return SizedBox(
       height: bannerHeight,
@@ -67,7 +69,10 @@ class _HeroBannerState extends State<HeroBanner> {
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (context, index) {
               final item = widget.items[index];
-              return _HeroBannerSlide(item: item);
+              return _HeroBannerSlide(
+                item: item,
+                onPlay: widget.onPlay != null ? () => widget.onPlay!(item) : null,
+              );
             },
           ),
 
@@ -104,32 +109,47 @@ class _HeroBannerState extends State<HeroBanner> {
 // ─── Individual slide ───────────────────────────────────────────────────────
 
 class _HeroBannerSlide extends StatelessWidget {
-  const _HeroBannerSlide({required this.item});
+  const _HeroBannerSlide({required this.item, this.onPlay});
 
   final MediaItem item;
+  final VoidCallback? onPlay;
 
   @override
   Widget build(BuildContext context) {
     final colors = item.backdropGradientColors ?? item.posterGradientColors;
+    final hasBackdrop = item.backdropUrl != null;
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ── Gradient backdrop ──
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(colors[0]),
-                Color(colors[1]).withValues(alpha: 0.6),
-                kBackgroundColor,
-              ],
-              stops: const [0.0, 0.5, 1.0],
+        // ── Backdrop image or gradient ──
+        if (hasBackdrop) ...[
+          // Real TMDB backdrop image
+          CachedNetworkImage(
+            imageUrl: item.backdropUrl!,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => _GradientBackdrop(colors: colors),
+            errorWidget: (context, url, error) => _GradientBackdrop(colors: colors),
+          ),
+          // Darken overlay for readability
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.5),
+                  kBackgroundColor,
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
             ),
           ),
-        ),
+        ] else ...[
+          // Gradient-only backdrop (no TMDB image)
+          _GradientBackdrop(colors: colors),
+        ],
 
         // ── Decorative radial glow ──
         Positioned(
@@ -160,32 +180,33 @@ class _HeroBannerSlide extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Genre chips
-              Wrap(
-                spacing: 8,
-                children: item.genres.map((g) {
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
+              if (item.genres.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  children: item.genres.map((g) {
+                    return Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      g,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white70,
+                      child: Text(
+                        g,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white70,
+                        ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                    );
+                  }).toList(),
+                ),
 
-              const SizedBox(height: 12),
+              if (item.genres.isNotEmpty) const SizedBox(height: 12),
 
               // Title
               Text(
@@ -241,6 +262,20 @@ class _HeroBannerSlide extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (item.type == MediaType.anime) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('•', style: TextStyle(color: kMutedText)),
+                    ),
+                    const Text(
+                      'Anime',
+                      style: TextStyle(
+                        color: kMutedText,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ],
               ),
 
@@ -266,7 +301,7 @@ class _HeroBannerSlide extends StatelessWidget {
                 children: [
                   // Play button
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: onPlay,
                     icon: const Icon(Icons.play_arrow_rounded, size: 22),
                     label: const Text('Play'),
                     style: ElevatedButton.styleFrom(
@@ -310,6 +345,30 @@ class _HeroBannerSlide extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Gradient-only backdrop used when no TMDB image is available.
+class _GradientBackdrop extends StatelessWidget {
+  const _GradientBackdrop({required this.colors});
+  final List<int> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(colors[0]),
+            Color(colors[1]).withValues(alpha: 0.6),
+            kBackgroundColor,
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ),
+      ),
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
+import 'package:flutter_video/features/metadata/metadata_providers.dart';
+import 'package:flutter_video/features/metadata/metadata_service.dart';
 
 class LibraryManagementScreen extends ConsumerStatefulWidget {
   const LibraryManagementScreen({super.key});
@@ -12,10 +14,25 @@ class LibraryManagementScreen extends ConsumerStatefulWidget {
 
 class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScreen> {
   final _pathController = TextEditingController();
+  final _apiKeyController = TextEditingController();
+  bool _apiKeyObscured = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load saved API key into the text field
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final savedKey = ref.read(tmdbApiKeyProvider);
+      if (savedKey.isNotEmpty) {
+        _apiKeyController.text = savedKey;
+      }
+    });
+  }
 
   @override
   void dispose() {
     _pathController.dispose();
+    _apiKeyController.dispose();
     super.dispose();
   }
 
@@ -28,7 +45,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
       await db.insertLibraryFolder(path);
       _pathController.clear();
       
-      _triggerScan();
+      await _triggerScan();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -61,16 +78,80 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
         ref.read(scanningStateProvider.notifier).setScanning(false);
       }
     }
+
+    // Auto-fetch metadata after scan if API key is configured
+    final apiKey = ref.read(tmdbApiKeyProvider);
+    if (apiKey.isNotEmpty) {
+      ref.read(metadataFetchProvider.notifier).fetchAll();
+    }
+  }
+
+  Future<void> _saveApiKey() async {
+    final key = _apiKeyController.text.trim();
+    await ref.read(tmdbApiKeyProvider.notifier).save(key);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(key.isEmpty
+              ? 'TMDB API key removed.'
+              : 'TMDB API key saved successfully.'),
+          backgroundColor: key.isEmpty ? Colors.orange[800] : Colors.green[800],
+        ),
+      );
+    }
+  }
+
+  Future<void> _fetchMetadata() async {
+    final apiKey = ref.read(tmdbApiKeyProvider);
+    if (apiKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a TMDB API key first.'),
+          backgroundColor: Colors.orange[800],
+        ),
+      );
+      return;
+    }
+    ref.read(metadataFetchProvider.notifier).fetchAll();
+  }
+
+  Future<void> _refreshMetadata() async {
+    final apiKey = ref.read(tmdbApiKeyProvider);
+    if (apiKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a TMDB API key first.'),
+          backgroundColor: Colors.orange[800],
+        ),
+      );
+      return;
+    }
+    ref.read(metadataFetchProvider.notifier).refreshAll();
   }
 
   @override
   Widget build(BuildContext context) {
     final foldersAsync = ref.watch(libraryFoldersProvider);
     final isScanning = ref.watch(scanningStateProvider);
+    final fetchStatus = ref.watch(metadataFetchProvider);
+
+    // Show error snackbar when fetch errors occur
+    ref.listen<MetadataFetchStatus>(metadataFetchProvider, (previous, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red[800],
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Library Management'),
+        title: const Text('Settings'),
         backgroundColor: kBackgroundColor,
       ),
       body: Padding(
@@ -78,6 +159,94 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── TMDB API Key Section ──
+            const Text(
+              'TMDB API Key',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Enter your TMDB API key (v3 auth) to fetch movie/TV metadata, posters, and ratings.',
+              style: TextStyle(fontSize: 13, color: kMutedText),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _apiKeyController,
+                    obscureText: _apiKeyObscured,
+                    decoration: InputDecoration(
+                      hintText: 'Paste your TMDB API key here',
+                      border: const OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.black26,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _apiKeyObscured
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          size: 20,
+                        ),
+                        onPressed: () =>
+                            setState(() => _apiKeyObscured = !_apiKeyObscured),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _saveApiKey,
+                  icon: const Icon(Icons.save_rounded, size: 18),
+                  label: const Text('Save'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kAccentColor,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: fetchStatus.isFetching ? null : _fetchMetadata,
+                  icon: fetchStatus.isFetching
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.download_rounded, size: 18),
+                  label: Text(fetchStatus.isFetching
+                      ? 'Fetching... ${fetchStatus.remainingFiles} remaining'
+                      : 'Fetch Metadata'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white12,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: fetchStatus.isFetching ? null : _refreshMetadata,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Refresh All'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white12,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 36),
+            const Divider(color: kDivider),
+            const SizedBox(height: 24),
+
+            // ── Library Folders Section ──
             const Text(
               'Add a folder to scan for video files:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
