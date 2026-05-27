@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 
-class MediaCard extends StatefulWidget {
+class MediaCard extends StatelessWidget {
   const MediaCard({
     super.key,
     required this.item,
@@ -24,18 +24,137 @@ class MediaCard extends StatefulWidget {
   final VoidCallback? onTap;
 
   @override
-  State<MediaCard> createState() => _MediaCardState();
+  Widget build(BuildContext context) {
+    final colors = item.posterGradientColors;
+    final hasPoster = item.posterUrl != null;
+
+    return _HoverScaleWrapper(
+      width: width,
+      height: height,
+      onTap: onTap,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Poster image or gradient fallback ──
+          if (hasPoster)
+            CachedNetworkImage(
+              imageUrl: item.posterUrl!,
+              fit: BoxFit.cover,
+              memCacheWidth: 300,
+              memCacheHeight: 450,
+              placeholder: (context, url) => _GradientPlaceholder(
+                colors: colors,
+                type: item.type,
+              ),
+              errorWidget: (context, url, error) => _GradientPlaceholder(
+                colors: colors,
+                type: item.type,
+              ),
+            )
+          else
+            _GradientPlaceholder(
+              colors: colors,
+              type: item.type,
+            ),
+
+          // ── Bottom info gradient ──
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.85),
+                  ],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      if (item.year != null)
+                        Text(
+                          '${item.year}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: kMutedText,
+                          ),
+                        ),
+                      if (item.rating != null) ...[
+                        const SizedBox(width: 6),
+                        const Icon(Icons.star_rounded,
+                            size: 12, color: kSecondaryAccent),
+                        const SizedBox(width: 2),
+                        Text(
+                          item.rating!.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: kSecondaryAccent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // ── Rating badge ──
+          if (item.rating != null)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _RatingBadge(rating: item.rating!),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
-class _MediaCardState extends State<MediaCard>
-    with SingleTickerProviderStateMixin {
+class _HoverScaleWrapper extends StatefulWidget {
+  const _HoverScaleWrapper({
+    required this.child,
+    required this.width,
+    required this.height,
+    this.onTap,
+  });
+
+  final Widget child;
+  final double width;
+  final double height;
+  final VoidCallback? onTap;
+
+  @override
+  State<_HoverScaleWrapper> createState() => _HoverScaleWrapperState();
+}
+
+class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
   bool _hovering = false;
 
   @override
   Widget build(BuildContext context) {
-    final colors = widget.item.posterGradientColors;
-    final hasPoster = widget.item.posterUrl != null;
-
     return MouseRegion(
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
@@ -53,118 +172,74 @@ class _MediaCardState extends State<MediaCard>
           ),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Color(colors[0]).withValues(alpha: _hovering ? 0.5 : 0.25),
-                blurRadius: _hovering ? 20 : 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: _hovering
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // ── Poster image or gradient fallback ──
-                if (hasPoster)
-                  CachedNetworkImage(
-                    imageUrl: widget.item.posterUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => _GradientPlaceholder(
-                      colors: colors,
-                      type: widget.item.type,
-                    ),
-                    errorWidget: (context, url, error) => _GradientPlaceholder(
-                      colors: colors,
-                      type: widget.item.type,
-                    ),
-                  )
-                else
-                  _GradientPlaceholder(
-                    colors: colors,
-                    type: widget.item.type,
-                  ),
-
-                // ── Bottom info gradient ──
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.85),
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.item.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            if (widget.item.year != null)
-                              Text(
-                                '${widget.item.year}',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: kMutedText,
-                                ),
-                              ),
-                            if (widget.item.rating != null) ...[
-                              const SizedBox(width: 6),
-                              const Icon(Icons.star_rounded,
-                                  size: 12, color: kSecondaryAccent),
-                              const SizedBox(width: 2),
-                              Text(
-                                widget.item.rating!.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: kSecondaryAccent,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              widget.child,
+              if (_hovering)
+                Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: const Center(
+                    child: Icon(
+                      Icons.play_circle_fill_rounded,
+                      size: 48,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-
-                // ── Hover border glow ──
-                if (_hovering)
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: kAccentColor.withValues(alpha: 0.6),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RatingBadge extends StatelessWidget {
+  const _RatingBadge({required this.rating});
+  final double rating;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, size: 12, color: kSecondaryAccent),
+          const SizedBox(width: 4),
+          Text(
+            rating.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }

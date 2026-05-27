@@ -79,6 +79,8 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   CachedNetworkImage(
                     imageUrl: thumbnailUrl,
                     fit: BoxFit.cover,
+                    memCacheWidth: 500,
+                    memCacheHeight: 280,
                     placeholder: (context, url) => _GradientThumbnail(colors: colors),
                     errorWidget: (context, url, error) => _GradientThumbnail(colors: colors),
                   )

@@ -3,6 +3,10 @@
 /// Displays a featured media item with a dramatic backdrop image (from TMDB)
 /// or gradient fallback, title, metadata chips, synopsis, and action buttons.
 /// Includes page indicators and auto-advances every 6 seconds.
+///
+/// Uses an [AnimationController] scoped to this widget only. The page
+/// indicators are driven via [AnimatedBuilder] so that neither the PageView
+/// nor any ancestor widget is rebuilt on page transitions.
 library;
 
 import 'dart:async';
@@ -23,12 +27,16 @@ class HeroBanner extends StatefulWidget {
 
 class _HeroBannerState extends State<HeroBanner> {
   late final PageController _pageController;
-  int _currentPage = 0;
   Timer? _autoScrollTimer;
+
+  /// ValueNotifier for the current page index — drives only the indicator
+  /// row via [AnimatedBuilder], avoiding a full widget rebuild.
+  late final ValueNotifier<int> _currentPage;
 
   @override
   void initState() {
     super.initState();
+    _currentPage = ValueNotifier<int>(0);
     _pageController = PageController();
     _startAutoScroll();
   }
@@ -36,7 +44,7 @@ class _HeroBannerState extends State<HeroBanner> {
   void _startAutoScroll() {
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
       if (!mounted) return;
-      final next = (_currentPage + 1) % widget.items.length;
+      final next = (_currentPage.value + 1) % widget.items.length;
       _pageController.animateToPage(
         next,
         duration: const Duration(milliseconds: 600),
@@ -49,6 +57,7 @@ class _HeroBannerState extends State<HeroBanner> {
   void dispose() {
     _autoScrollTimer?.cancel();
     _pageController.dispose();
+    _currentPage.dispose();
     super.dispose();
   }
 
@@ -66,7 +75,7 @@ class _HeroBannerState extends State<HeroBanner> {
           PageView.builder(
             controller: _pageController,
             itemCount: widget.items.length,
-            onPageChanged: (i) => setState(() => _currentPage = i),
+            onPageChanged: (i) => _currentPage.value = i,
             itemBuilder: (context, index) {
               final item = widget.items[index];
               return _HeroBannerSlide(
@@ -76,7 +85,7 @@ class _HeroBannerState extends State<HeroBanner> {
             },
           ),
 
-          // ── Page indicators ──
+          // ── Page indicators (rebuilt only when _currentPage changes) ──
           Positioned(
             bottom: 24,
             left: 0,
@@ -84,18 +93,23 @@ class _HeroBannerState extends State<HeroBanner> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(widget.items.length, (i) {
-                final isActive = i == _currentPage;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: isActive ? 24 : 8,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    color: isActive
-                        ? kAccentColor
-                        : Colors.white.withValues(alpha: 0.3),
-                  ),
+                return ValueListenableBuilder<int>(
+                  valueListenable: _currentPage,
+                  builder: (context, currentPage, _) {
+                    final isActive = i == currentPage;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: isActive ? 24 : 8,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(2),
+                        color: isActive
+                            ? kAccentColor
+                            : Colors.white.withValues(alpha: 0.3),
+                      ),
+                    );
+                  },
                 );
               }),
             ),
@@ -128,6 +142,8 @@ class _HeroBannerSlide extends StatelessWidget {
           CachedNetworkImage(
             imageUrl: item.backdropUrl!,
             fit: BoxFit.cover,
+            memCacheWidth: 960,
+            memCacheHeight: 540,
             placeholder: (context, url) => _GradientBackdrop(colors: colors),
             errorWidget: (context, url, error) => _GradientBackdrop(colors: colors),
           ),
