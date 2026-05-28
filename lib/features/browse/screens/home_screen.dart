@@ -1,16 +1,20 @@
 /// Home screen — the main browse view of the media player.
 ///
-/// Composes all UI sections into a single scrollable view:
-///   1. Hero banner carousel (top)
+/// Composes all UI sections into a single [CustomScrollView] with slivers:
+///   1. Hero banner carousel (top, wrapped in RepaintBoundary)
 ///   2. Continue Watching horizontal row
 ///   3. Recently Added horizontal row
-///   4. Category grids (Movies, TV Shows, Anime, Uncategorized)
+///   4. Category grids (Movies, TV Shows, Anime, Uncategorized) — true SliverGrids
 ///
 /// Uses a transparent app bar that fades in a background as the user scrolls.
 /// Shows a persistent bottom indicator during metadata fetching.
 ///
 /// Each data-driven section is a standalone [ConsumerWidget] so that provider
 /// updates only rebuild the section that changed, not the entire tree.
+///
+/// The category grids use [SliverGrid] via [MediaGrid.buildSlivers] so that
+/// cards are lazily built only when they scroll into the viewport, eliminating
+/// the performance penalty of `shrinkWrap: true` GridViews.
 library;
 
 import 'package:flutter/material.dart';
@@ -37,13 +41,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    // Fire-and-forget: listen for metadata fetch errors (action, not display).
-    // We use ref.listen which does NOT cause widget rebuilds.
-  }
 
   @override
   void dispose() {
@@ -81,67 +78,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
 
-      // ── Scrollable body ──
-      // Each section is a standalone ConsumerWidget that watches only
-      // the provider it needs, preventing cascading rebuilds.
-      body: SingleChildScrollView(
+      // ── Scrollable body — CustomScrollView with slivers ──
+      body: CustomScrollView(
         controller: _scrollController,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Hero banner (isolated behind RepaintBoundary)
-            const RepaintBoundary(
+        slivers: const [
+          // 1. Hero banner (isolated behind RepaintBoundary)
+          SliverToBoxAdapter(
+            child: RepaintBoundary(
               child: _HeroBannerSection(),
             ),
+          ),
 
-            const SizedBox(height: 28),
+          SliverToBoxAdapter(child: SizedBox(height: 28)),
 
-            // 2. Continue Watching
-            const _ContinueWatchingSection(),
+          // 2. Continue Watching
+          SliverToBoxAdapter(child: _ContinueWatchingSection()),
 
-            const SizedBox(height: 32),
+          SliverToBoxAdapter(child: SizedBox(height: 32)),
 
-            // 3. Recently Added
-            const _RecentlyAddedSection(),
+          // 3. Recently Added
+          SliverToBoxAdapter(child: _RecentlyAddedSection()),
 
-            // 4–7. Category grids
-            const _CategoryGridsSection(),
+          // 4–7. Category grids (returns multiple slivers internally)
+          _CategoryGridsSliverSection(),
 
-            // ── Empty state ──
-            const _EmptyLibraryPlaceholder(),
+          // ── Empty state ──
+          SliverToBoxAdapter(child: _EmptyLibraryPlaceholder()),
 
-            const SizedBox(height: 48),
+          SliverToBoxAdapter(child: SizedBox(height: 48)),
 
-            // ── Footer ──
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 32),
-                child: Column(
-                  children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [kAccentColor, kProgressFill],
-                      ).createShader(bounds),
-                      child: const Text(
-                        'FluxPlayer',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Your media, beautifully organized.',
-                      style: TextStyle(color: kMutedText, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          // ── Footer ──
+          _FooterSliver(),
+        ],
       ),
 
       // ── Persistent bottom fetch indicator (own ConsumerWidget) ──
@@ -300,18 +268,47 @@ class _RecentlyAddedSection extends ConsumerWidget {
   }
 }
 
-// ─── Category Grids Section ─────────────────────────────────────────────────
+// ─── Category Grids Sliver Section ──────────────────────────────────────────
 
-/// Watches [allMediaFilesProvider] and renders Movies, TV Shows, Anime,
-/// and Uncategorized grids.
-class _CategoryGridsSection extends ConsumerWidget {
-  const _CategoryGridsSection();
+/// A custom sliver that watches [allMediaFilesProvider] and produces
+/// multiple child slivers — one [MediaGrid.buildSlivers] per category.
+///
+/// Caches the entire [SliverMainAxisGroup] widget instance and only recreates
+/// it when the set of media file IDs changes. This prevents the DB stream's
+/// frequent emissions during metadata fetching from rebuilding all visible
+/// media cards.
+class _CategoryGridsSliverSection extends ConsumerStatefulWidget {
+  const _CategoryGridsSliverSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_CategoryGridsSliverSection> createState() =>
+      _CategoryGridsSliverSectionState();
+}
+
+class _CategoryGridsSliverSectionState
+    extends ConsumerState<_CategoryGridsSliverSection> {
+  String _trackedIdHash = '';
+  Widget _cached = const SliverToBoxAdapter(child: SizedBox.shrink());
+
+  @override
+  Widget build(BuildContext context) {
     final allMediaFilesAsync = ref.watch(allMediaFilesProvider);
+    final files = allMediaFilesAsync.value;
+    if (files == null || files.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    // Build a lightweight hash of all file IDs. If only metadata fields
+    // changed (poster, rating, genres) but the set of files is the same,
+    // we skip the rebuild entirely.
+    final newIdHash = files.map((f) => f.id).join(',');
+    if (newIdHash == _trackedIdHash) {
+      return _cached;
+    }
+    _trackedIdHash = newIdHash;
+
     final allMediaFiles =
-        allMediaFilesAsync.value?.map(MediaItem.fromMediaFile).toList() ?? [];
+        files.map(MediaItem.fromMediaFile).toList();
 
     final movieFiles =
         allMediaFiles.where((item) => item.type == MediaType.movie).toList();
@@ -323,60 +320,62 @@ class _CategoryGridsSection extends ConsumerWidget {
         .where((item) => item.type == MediaType.uncategorized)
         .toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Movies grid
-        if (movieFiles.isNotEmpty) ...[
-          MediaGrid(
-            title: 'Movies',
-            items: movieFiles,
-            onSeeAll: () {},
-            onItemTap: (index) =>
-                _navigateToPlayer(context, ref, movieFiles[index]),
-          ),
-          const SizedBox(height: 36),
-        ],
+    // Collect all category slivers into a single list.
+    final slivers = <Widget>[];
 
-        // TV Shows grid
-        if (tvShowFiles.isNotEmpty) ...[
-          MediaGrid(
-            title: 'TV Shows',
-            items: tvShowFiles,
-            onSeeAll: () {},
-            onItemTap: (index) =>
-                _navigateToPlayer(context, ref, tvShowFiles[index]),
-          ),
-          const SizedBox(height: 36),
-        ],
+    if (movieFiles.isNotEmpty) {
+      slivers.addAll(MediaGrid(
+        title: 'Movies',
+        items: movieFiles,
+        onSeeAll: () {},
+        onItemTap: (index) =>
+            _navigateToPlayer(context, movieFiles[index]),
+      ).buildSlivers(context));
+      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
+    }
 
-        // Anime grid
-        if (animeFiles.isNotEmpty) ...[
-          MediaGrid(
-            title: 'Anime',
-            items: animeFiles,
-            onSeeAll: () {},
-            onItemTap: (index) =>
-                _navigateToPlayer(context, ref, animeFiles[index]),
-          ),
-          const SizedBox(height: 36),
-        ],
+    if (tvShowFiles.isNotEmpty) {
+      slivers.addAll(MediaGrid(
+        title: 'TV Shows',
+        items: tvShowFiles,
+        onSeeAll: () {},
+        onItemTap: (index) =>
+            _navigateToPlayer(context, tvShowFiles[index]),
+      ).buildSlivers(context));
+      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
+    }
 
-        // Uncategorized grid
-        if (uncategorizedFiles.isNotEmpty)
-          MediaGrid(
-            title: 'Uncategorized',
-            items: uncategorizedFiles,
-            onSeeAll: () {},
-            onItemTap: (index) =>
-                _navigateToPlayer(context, ref, uncategorizedFiles[index]),
-          ),
-      ],
-    );
+    if (animeFiles.isNotEmpty) {
+      slivers.addAll(MediaGrid(
+        title: 'Anime',
+        items: animeFiles,
+        onSeeAll: () {},
+        onItemTap: (index) =>
+            _navigateToPlayer(context, animeFiles[index]),
+      ).buildSlivers(context));
+      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
+    }
+
+    if (uncategorizedFiles.isNotEmpty) {
+      slivers.addAll(MediaGrid(
+        title: 'Uncategorized',
+        items: uncategorizedFiles,
+        onSeeAll: () {},
+        onItemTap: (index) =>
+            _navigateToPlayer(context, uncategorizedFiles[index]),
+      ).buildSlivers(context));
+    }
+
+    if (slivers.isEmpty) {
+      _cached = const SliverToBoxAdapter(child: SizedBox.shrink());
+      return _cached;
+    }
+
+    _cached = SliverMainAxisGroup(slivers: slivers);
+    return _cached;
   }
 
-  void _navigateToPlayer(
-      BuildContext context, WidgetRef ref, MediaItem item) {
+  void _navigateToPlayer(BuildContext context, MediaItem item) {
     // Use ref.read — tap action, not reactive display.
     final files = ref.read(allMediaFilesProvider).value;
     if (files != null) {
@@ -389,6 +388,45 @@ class _CategoryGridsSection extends ConsumerWidget {
         ),
       );
     }
+  }
+}
+
+// ─── Footer ─────────────────────────────────────────────────────────────────
+
+class _FooterSliver extends StatelessWidget {
+  const _FooterSliver();
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 32),
+          child: Column(
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [kAccentColor, kProgressFill],
+                ).createShader(bounds),
+                child: const Text(
+                  'FluxPlayer',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Your media, beautifully organized.',
+                style: TextStyle(color: kMutedText, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -495,8 +533,12 @@ class _FetchStatusBar extends ConsumerWidget {
 
 // ─── Fading app bar (own state for scroll-driven opacity) ───────────────────
 
-/// Isolated app bar widget that listens to the scroll controller and only
-/// rebuilds itself (not the entire home screen) when opacity changes.
+/// Isolated app bar widget that listens to the scroll controller via a
+/// [ValueNotifier] and only rebuilds the background [Container] color.
+///
+/// The entire child tree (logo, nav items, buttons) is passed as the
+/// [ValueListenableBuilder.child] so it is built **once** and reused on
+/// every scroll tick — zero child rebuilds.
 class _FadingAppBar extends StatefulWidget {
   const _FadingAppBar({
     required this.scrollController,
@@ -511,7 +553,7 @@ class _FadingAppBar extends StatefulWidget {
 }
 
 class _FadingAppBarState extends State<_FadingAppBar> {
-  double _opacity = 0;
+  final ValueNotifier<double> _opacity = ValueNotifier<double>(0);
 
   @override
   void initState() {
@@ -531,39 +573,42 @@ class _FadingAppBarState extends State<_FadingAppBar> {
   @override
   void dispose() {
     widget.scrollController.removeListener(_onScroll);
+    _opacity.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     final offset = widget.scrollController.offset;
-    final opacity = (offset / 200).clamp(0.0, 1.0);
-    if ((opacity - _opacity).abs() > 0.01) {
-      setState(() => _opacity = opacity);
+    final newOpacity = (offset / 200).clamp(0.0, 1.0);
+    if ((newOpacity - _opacity.value).abs() > 0.01) {
+      _opacity.value = newOpacity;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      color: kBackgroundColor.withValues(alpha: _opacity * 0.95),
+    return ValueListenableBuilder<double>(
+      valueListenable: _opacity,
+      // ── child is built ONCE and reused on every scroll tick ──
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              // App logo / title
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [kAccentColor, kProgressFill],
-                ).createShader(bounds),
-                child: const Text(
-                  'FluxPlayer',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white, // masked by gradient
-                    letterSpacing: -0.5,
+              // App logo — RepaintBoundary caches the ShaderMask rasterisation.
+              RepaintBoundary(
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [kAccentColor, kProgressFill],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'FluxPlayer',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
               ),
@@ -572,23 +617,22 @@ class _FadingAppBarState extends State<_FadingAppBar> {
                 const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(kAccentColor)),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(kAccentColor)),
                 ),
               ],
               const Spacer(),
-              // Nav items (placeholder for now)
               _NavItem(label: 'Home', isActive: true),
               _NavItem(label: 'Movies'),
               _NavItem(label: 'TV Shows'),
               _NavItem(label: 'Library'),
               const SizedBox(width: 16),
-              // Search icon
               IconButton(
                 icon: const Icon(Icons.search_rounded),
                 onPressed: () {},
                 tooltip: 'Search',
               ),
-              // Settings icon
               IconButton(
                 icon: const Icon(Icons.settings_rounded),
                 onPressed: () {
@@ -605,6 +649,13 @@ class _FadingAppBarState extends State<_FadingAppBar> {
           ),
         ),
       ),
+      // ── builder only fires when opacity changes; child is reused ──
+      builder: (context, opacity, child) {
+        return Container(
+          color: kBackgroundColor.withValues(alpha: opacity * 0.95),
+          child: child,
+        );
+      },
     );
   }
 }

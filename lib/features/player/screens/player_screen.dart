@@ -64,14 +64,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       final native = player.platform as NativePlayer;
       await native.setProperty('sub-ass-override', 'no');
 
-      // Fallback style for unstyled subs (SRT, VTT, etc.)
+      // Native fallback style for unstyled subs (SRT, VTT, etc.)
+      // Multiplied by devicePixelRatio so mpv renders sharp at e.g., 125% OS scaling
+      final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+
       await native.setProperty('sub-font', 'Arial');
-      await native.setProperty('sub-font-size', '48');
+      await native.setProperty('sub-font-size', '${(48 * dpr).round()}');
       await native.setProperty('sub-color', '#FFFFFFFF');
-      await native.setProperty('sub-border-size', '4');
+      await native.setProperty('sub-border-size', '${(4 * dpr).round()}');
       await native.setProperty('sub-border-color', '#FF000000');
       await native.setProperty('sub-shadow-offset', '0');
-      await native.setProperty('sub-margin-y', '22');
+      await native.setProperty('sub-margin-y', '${(22 * dpr).round()}');
     }
 
     _durationSub = player.stream.duration.listen((duration) {

@@ -76,13 +76,18 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
               children: [
                 // ── Thumbnail image or gradient ──
                 if (thumbnailUrl != null)
-                  CachedNetworkImage(
-                    imageUrl: thumbnailUrl,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 500,
-                    memCacheHeight: 280,
-                    placeholder: (context, url) => _GradientThumbnail(colors: colors),
-                    errorWidget: (context, url, error) => _GradientThumbnail(colors: colors),
+                  Builder(
+                    builder: (context) {
+                      final dpr = MediaQuery.devicePixelRatioOf(context);
+                      return CachedNetworkImage(
+                        imageUrl: thumbnailUrl,
+                        fit: BoxFit.cover,
+                        memCacheWidth: (500 * dpr).round(),
+                        memCacheHeight: (280 * dpr).round(),
+                        placeholder: (context, url) => _GradientThumbnail(colors: colors),
+                        errorWidget: (context, url, error) => _GradientThumbnail(colors: colors),
+                      );
+                    }
                   )
                 else
                   _GradientThumbnail(colors: colors),

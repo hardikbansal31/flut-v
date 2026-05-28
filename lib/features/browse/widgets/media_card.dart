@@ -27,6 +27,7 @@ class MediaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = item.posterGradientColors;
     final hasPoster = item.posterUrl != null;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
 
     return _HoverScaleWrapper(
       width: width,
@@ -40,8 +41,8 @@ class MediaCard extends StatelessWidget {
             CachedNetworkImage(
               imageUrl: item.posterUrl!,
               fit: BoxFit.cover,
-              memCacheWidth: 300,
-              memCacheHeight: 450,
+              memCacheWidth: (300 * dpr).round(),
+              memCacheHeight: (450 * dpr).round(),
               placeholder: (context, url) => _GradientPlaceholder(
                 colors: colors,
                 type: item.type,

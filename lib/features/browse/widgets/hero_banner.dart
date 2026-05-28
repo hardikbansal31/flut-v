@@ -132,6 +132,7 @@ class _HeroBannerSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = item.backdropGradientColors ?? item.posterGradientColors;
     final hasBackdrop = item.backdropUrl != null;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
 
     return Stack(
       fit: StackFit.expand,
@@ -142,8 +143,8 @@ class _HeroBannerSlide extends StatelessWidget {
           CachedNetworkImage(
             imageUrl: item.backdropUrl!,
             fit: BoxFit.cover,
-            memCacheWidth: 960,
-            memCacheHeight: 540,
+            memCacheWidth: (960 * dpr).round(),
+            memCacheHeight: (540 * dpr).round(),
             placeholder: (context, url) => _GradientBackdrop(colors: colors),
             errorWidget: (context, url, error) => _GradientBackdrop(colors: colors),
           ),
