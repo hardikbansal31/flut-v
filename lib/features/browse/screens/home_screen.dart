@@ -18,11 +18,14 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_video/core/database/database.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/settings/library_management_screen.dart';
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
+import 'package:flutter_video/features/browse/models/series_item.dart';
+import 'package:flutter_video/features/browse/screens/series_detail_screen.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_service.dart';
@@ -41,6 +44,26 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Prune DB entries for files deleted while the app was closed.
+    // Uses the lightweight pruneDeletedFiles() which only does DB deletes
+    // for missing files — no upserts, so no unnecessary Drift stream
+    // emissions and zero GPU overhead.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pruneOnStartup();
+      // Eagerly initialise the file-system watcher so live deletions are
+      // detected while the app is running.
+      ref.read(libraryWatcherProvider);
+    });
+  }
+
+  Future<void> _pruneOnStartup() async {
+    final scanner = ref.read(libraryScannerProvider);
+    await scanner.pruneDeletedFiles();
+  }
 
   @override
   void dispose() {
@@ -186,32 +209,63 @@ class _HeroBannerSectionState extends ConsumerState<_HeroBannerSection> {
 
 // ─── Continue Watching Section ──────────────────────────────────────────────
 
-/// Watches [continueWatchingFilesProvider] only.
+/// Watches [continueWatchingProvider] and groups TV episodes by series.
+/// Shows one card per series (most recently watched episode) and one per movie.
 class _ContinueWatchingSection extends ConsumerWidget {
   const _ContinueWatchingSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final continueWatchingFiles = ref.watch(continueWatchingFilesProvider);
-    final continueWatching =
-        continueWatchingFiles.map(MediaItem.fromMediaFile).toList();
+    final entries = ref.watch(continueWatchingProvider);
+    if (entries.isEmpty) return const SizedBox.shrink();
 
-    if (continueWatching.isEmpty) return const SizedBox.shrink();
+    // Build MediaItems for display
+    final items = entries.map((entry) {
+      if (entry.isSeries) {
+        return MediaItem.fromSeriesItem(
+          entry.series!,
+          currentEpisode: entry.file,
+        );
+      }
+      return MediaItem.fromMediaFile(entry.file);
+    }).toList();
 
     return HorizontalMediaRow(
       title: 'Continue Watching',
-      itemCount: continueWatching.length,
+      itemCount: items.length,
       height: 145,
       onSeeAll: () {},
       itemBuilder: (context, index) {
+        final entry = entries[index];
+        final item = items[index];
+
+        // For series: show series title with episode label
+        final displayItem = item.episodeLabel != null
+            ? MediaItem(
+                id: item.id,
+                title: '${item.title} · ${item.episodeLabel}',
+                posterGradientColors: item.posterGradientColors,
+                posterUrl: item.posterUrl,
+                backdropUrl: item.backdropUrl,
+                year: item.year,
+                rating: item.rating,
+                overview: item.overview,
+                genres: item.genres,
+                type: item.type,
+                durationMinutes: item.durationMinutes,
+                watchedMinutes: item.watchedMinutes,
+              )
+            : item;
+
         return ContinueWatchingCard(
-          item: continueWatching[index],
+          item: displayItem,
           onTap: () {
+            // Always navigate to the specific episode for playback
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    PlayerScreen(mediaFile: continueWatchingFiles[index]),
+                    PlayerScreen(mediaFile: entry.file),
               ),
             );
           },
@@ -223,38 +277,74 @@ class _ContinueWatchingSection extends ConsumerWidget {
 
 // ─── Recently Added Section ─────────────────────────────────────────────────
 
-/// Watches [recentlyAddedFilesProvider] only.
+/// Watches [recentlyAddedFilesProvider] and groups TV/anime into series cards.
 class _RecentlyAddedSection extends ConsumerWidget {
   const _RecentlyAddedSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recentlyAddedAsync = ref.watch(recentlyAddedFilesProvider);
-    final recentlyAdded =
-        recentlyAddedAsync.value?.map(MediaItem.fromMediaFile).toList() ?? [];
+    final recentFiles = recentlyAddedAsync.value ?? [];
 
-    if (recentlyAdded.isEmpty) return const SizedBox.shrink();
+    if (recentFiles.isEmpty) return const SizedBox.shrink();
+
+    // Separate movies from TV/anime
+    final movies = recentFiles
+        .where((f) => f.mediaType != 'tv' && f.mediaType != 'anime')
+        .toList();
+    final tvFiles = recentFiles
+        .where((f) => f.mediaType == 'tv' || f.mediaType == 'anime')
+        .toList();
+
+    // Group TV/anime into series
+    final seriesList = SeriesItem.groupFiles(tvFiles);
+
+    // Build display items: movies as individual + series as grouped
+    final displayItems = <_RecentItem>[];
+    for (final file in movies) {
+      displayItems.add(_RecentItem(
+        mediaItem: MediaItem.fromMediaFile(file),
+        file: file,
+      ));
+    }
+    for (final series in seriesList) {
+      displayItems.add(_RecentItem(
+        mediaItem: MediaItem.fromSeriesItem(series),
+        series: series,
+      ));
+    }
+
+    if (displayItems.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         HorizontalMediaRow(
           title: 'Recently Added',
-          itemCount: recentlyAdded.length,
+          itemCount: displayItems.length,
           height: 215,
           onSeeAll: () {},
           itemBuilder: (context, index) {
+            final item = displayItems[index];
             return MediaCard(
-              item: recentlyAdded[index],
+              item: item.mediaItem,
               onTap: () {
-                // Use ref.read — tap action, not reactive display.
-                final files = ref.read(recentlyAddedFilesProvider).value;
-                if (files != null) {
+                if (item.series != null) {
+                  // Navigate to series detail page
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          PlayerScreen(mediaFile: files[index]),
+                      builder: (_) =>
+                          SeriesDetailScreen(series: item.series!),
+                    ),
+                  );
+                } else if (item.file != null) {
+                  // Navigate to player for movies
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          PlayerScreen(mediaFile: item.file!),
                     ),
                   );
                 }
@@ -268,15 +358,23 @@ class _RecentlyAddedSection extends ConsumerWidget {
   }
 }
 
+/// Helper class for recently added items (either a file or a grouped series).
+class _RecentItem {
+  final MediaItem mediaItem;
+  final MediaFile? file;
+  final SeriesItem? series;
+  const _RecentItem({required this.mediaItem, this.file, this.series});
+}
+
 // ─── Category Grids Sliver Section ──────────────────────────────────────────
 
 /// A custom sliver that watches [allMediaFilesProvider] and produces
 /// multiple child slivers — one [MediaGrid.buildSlivers] per category.
 ///
-/// Caches the entire [SliverMainAxisGroup] widget instance and only recreates
-/// it when the set of media file IDs changes. This prevents the DB stream's
-/// frequent emissions during metadata fetching from rebuilding all visible
-/// media cards.
+/// TV Shows and Anime are grouped by series (one card per series),
+/// Movies and Uncategorized show individual files.
+///
+/// Caches the widget to avoid unnecessary rebuilds during metadata fetching.
 class _CategoryGridsSliverSection extends ConsumerStatefulWidget {
   const _CategoryGridsSliverSection();
 
@@ -298,71 +396,83 @@ class _CategoryGridsSliverSectionState
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
-    // Build a lightweight hash of all file IDs. If only metadata fields
-    // changed (poster, rating, genres) but the set of files is the same,
-    // we skip the rebuild entirely.
-    final newIdHash = files.map((f) => f.id).join(',');
+    // Also watch grouped series for TV/anime
+    final allSeries = ref.watch(groupedSeriesProvider);
+
+    // Build a lightweight hash of all file IDs + series count.
+    final newIdHash =
+        '${files.map((f) => f.id).join(',')}_${allSeries.length}';
     if (newIdHash == _trackedIdHash) {
       return _cached;
     }
     _trackedIdHash = newIdHash;
 
-    final allMediaFiles =
-        files.map(MediaItem.fromMediaFile).toList();
+    final allMediaItems = files.map(MediaItem.fromMediaFile).toList();
 
-    final movieFiles =
-        allMediaFiles.where((item) => item.type == MediaType.movie).toList();
-    final tvShowFiles =
-        allMediaFiles.where((item) => item.type == MediaType.tvShow).toList();
-    final animeFiles =
-        allMediaFiles.where((item) => item.type == MediaType.anime).toList();
-    final uncategorizedFiles = allMediaFiles
+    // Movies: individual file cards
+    final movieItems =
+        allMediaItems.where((item) => item.type == MediaType.movie).toList();
+
+    // TV Shows: grouped series cards
+    final tvSeries =
+        allSeries.where((s) => s.type == MediaType.tvShow).toList();
+    final tvItems =
+        tvSeries.map((s) => MediaItem.fromSeriesItem(s)).toList();
+
+    // Anime: grouped series cards
+    final animeSeries =
+        allSeries.where((s) => s.type == MediaType.anime).toList();
+    final animeItems =
+        animeSeries.map((s) => MediaItem.fromSeriesItem(s)).toList();
+
+    // Uncategorized: individual file cards
+    final uncategorizedItems = allMediaItems
         .where((item) => item.type == MediaType.uncategorized)
         .toList();
 
     // Collect all category slivers into a single list.
     final slivers = <Widget>[];
 
-    if (movieFiles.isNotEmpty) {
+    if (movieItems.isNotEmpty) {
       slivers.addAll(MediaGrid(
         title: 'Movies',
-        items: movieFiles,
+        items: movieItems,
         onSeeAll: () {},
         onItemTap: (index) =>
-            _navigateToPlayer(context, movieFiles[index]),
+            _navigateToPlayer(context, movieItems[index]),
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
 
-    if (tvShowFiles.isNotEmpty) {
+    if (tvItems.isNotEmpty) {
       slivers.addAll(MediaGrid(
         title: 'TV Shows',
-        items: tvShowFiles,
+        items: tvItems,
         onSeeAll: () {},
         onItemTap: (index) =>
-            _navigateToPlayer(context, tvShowFiles[index]),
+            _navigateToSeriesDetail(context, tvSeries[index]),
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
 
-    if (animeFiles.isNotEmpty) {
+    if (animeItems.isNotEmpty) {
       slivers.addAll(MediaGrid(
         title: 'Anime',
-        items: animeFiles,
+        items: animeItems,
         onSeeAll: () {},
         onItemTap: (index) =>
-            _navigateToPlayer(context, animeFiles[index]),
+            _navigateToSeriesDetail(context, animeSeries[index]),
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
 
-    if (uncategorizedFiles.isNotEmpty) {
+    if (uncategorizedItems.isNotEmpty) {
       slivers.addAll(MediaGrid(
         title: 'Uncategorized',
-        items: uncategorizedFiles,
+        items: uncategorizedItems,
         onSeeAll: () {},
         onItemTap: (index) =>
-            _navigateToPlayer(context, uncategorizedFiles[index]),
+            _navigateToPlayer(context, uncategorizedItems[index]),
       ).buildSlivers(context));
     }
 
@@ -376,7 +486,6 @@ class _CategoryGridsSliverSectionState
   }
 
   void _navigateToPlayer(BuildContext context, MediaItem item) {
-    // Use ref.read — tap action, not reactive display.
     final files = ref.read(allMediaFilesProvider).value;
     if (files != null) {
       final matchingFile =
@@ -388,6 +497,15 @@ class _CategoryGridsSliverSectionState
         ),
       );
     }
+  }
+
+  void _navigateToSeriesDetail(BuildContext context, SeriesItem series) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SeriesDetailScreen(series: series),
+      ),
+    );
   }
 }
 

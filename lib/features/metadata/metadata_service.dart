@@ -2,6 +2,11 @@
 ///
 /// Coordinates filename parsing → TMDB search → type resolution → DB write.
 /// Processes files sequentially with rate-limit awareness.
+///
+/// For TV episodes, uses a three-step lookup:
+///   1. Search for the show via /search/tv
+///   2. Fetch episode details via /tv/{id}/season/{s}/episode/{e}
+///   3. Fetch season poster as fallback if episode has no still
 library;
 
 import 'dart:async';
@@ -62,31 +67,43 @@ class MetadataService {
 
   /// Fetch metadata for a single media file.
   ///
-  /// 1. Parse the filename to extract a clean title and year.
-  /// 2. Search TMDB using multi-search.
-  /// 3. Resolve the media type (movie/tv/anime/uncategorized).
-  /// 4. Write metadata to the database.
+  /// Parses the filename and routes to either TV or movie lookup.
   Future<void> fetchForFile(MediaFile file) async {
     print('[MetadataService] Fetching metadata for: "${file.fileName}"');
     final parsed = FilenameParser.parse(file.fileName);
-    print('[MetadataService] Parsed as: title="${parsed.cleanTitle}", year=${parsed.year}');
 
-    // Search TMDB
+    if (parsed.isTvShow) {
+      print('[MetadataService] Parsed TV: title="${parsed.cleanTitle}" '
+          'S${parsed.season!.toString().padLeft(2, '0')}'
+          'E${parsed.episode!.toString().padLeft(2, '0')}');
+      await _fetchTvMetadata(file, parsed);
+    } else {
+      print('[MetadataService] Parsed as: title="${parsed.cleanTitle}", '
+          'year=${parsed.year}');
+      await _fetchMovieMetadata(file, parsed);
+    }
+  }
+
+  // ─── Movie metadata (existing logic, unchanged) ───────────────────────────
+
+  /// Fetch metadata for a movie file using multi-search.
+  Future<void> _fetchMovieMetadata(MediaFile file, ParsedFilename parsed) async {
     TmdbSearchResult? result;
     try {
       // Try with year first for more accurate results
       if (parsed.year != null) {
-        print('[MetadataService] Searching TMDB with year: "${parsed.cleanTitle}" (${parsed.year})');
+        print('[MetadataService] Searching TMDB with year: '
+            '"${parsed.cleanTitle}" (${parsed.year})');
         result = await _client.searchMulti(parsed.cleanTitle, year: parsed.year);
       }
       // If no result with year, try without
       if (result == null) {
-        print('[MetadataService] Searching TMDB without year: "${parsed.cleanTitle}"');
+        print('[MetadataService] Searching TMDB without year: '
+            '"${parsed.cleanTitle}"');
         result = await _client.searchMulti(parsed.cleanTitle);
       }
     } on TmdbRateLimitException catch (e) {
       print('[MetadataService] Rate limit hit: ${e.retryAfterSeconds}s');
-      // Re-throw for the caller to handle with retry logic
       _emitStatus(_currentStatus.copyWith(
         errorMessage: 'Rate limited. Waiting ${e.retryAfterSeconds}s...',
       ));
@@ -100,21 +117,18 @@ class MetadataService {
     }
 
     if (result == null) {
-      print('[MetadataService] No TMDB match found for: "${parsed.cleanTitle}"');
-      // No match found — mark as uncategorized
+      print('[MetadataService] No TMDB match found for: '
+          '"${parsed.cleanTitle}"');
       await _db.markAsUncategorized(file.id);
       return;
     }
 
-    print('[MetadataService] TMDB Match found: "${result.title}" (ID: ${result.id}, Type: ${result.mediaType})');
+    print('[MetadataService] TMDB Match found: "${result.title}" '
+        '(ID: ${result.id}, Type: ${result.mediaType})');
 
-    // Resolve media type
     final resolvedType = _resolveMediaType(result);
-
-    // Build genre string
     final genreString = _client.resolveGenres(result.genreIds);
 
-    // Write to database
     await _db.updateMetadata(
       fileId: file.id,
       tmdbId: result.id,
@@ -129,6 +143,134 @@ class MetadataService {
       originalLanguage: result.originalLanguage,
     );
   }
+
+  // ─── TV metadata (new three-step lookup) ──────────────────────────────────
+
+  /// Fetch metadata for a TV episode file.
+  ///
+  /// Three-step TMDB lookup:
+  ///   1. `/search/tv` for the series
+  ///   2. `/tv/{id}/season/{s}/episode/{e}` for episode details
+  ///   3. `/tv/{id}/season/{s}` for season poster fallback
+  Future<void> _fetchTvMetadata(MediaFile file, ParsedFilename parsed) async {
+    final season = parsed.season!;
+    final episode = parsed.episode!;
+    final seCode = 'S${season.toString().padLeft(2, '0')}'
+        'E${episode.toString().padLeft(2, '0')}';
+
+    // ── Step 1: Search for the TV series ─────────────────────────────────
+
+    TmdbSearchResult? seriesResult;
+    try {
+      // Try English first
+      print('[MetadataService] Searching TMDB TV: "${parsed.cleanTitle}"');
+      seriesResult = await _client.searchTv(parsed.cleanTitle);
+
+      // Fix 4: If no English results, retry with Japanese
+      if (seriesResult == null) {
+        print('[MetadataService] No English match, retrying with ja-JP: '
+            '"${parsed.cleanTitle}"');
+        seriesResult = await _client.searchTv(
+          parsed.cleanTitle,
+          language: 'ja-JP',
+        );
+      }
+    } on TmdbRateLimitException catch (e) {
+      print('[MetadataService] Rate limit hit: ${e.retryAfterSeconds}s');
+      _emitStatus(_currentStatus.copyWith(
+        errorMessage: 'Rate limited. Waiting ${e.retryAfterSeconds}s...',
+      ));
+      rethrow;
+    } on TmdbAuthException {
+      print('[MetadataService] Auth failure: Invalid TMDB API key');
+      _emitStatus(_currentStatus.copyWith(
+        errorMessage: 'Invalid TMDB API key. Please check Settings.',
+      ));
+      rethrow;
+    }
+
+    if (seriesResult == null) {
+      print('[MetadataService] No TMDB TV match found for: '
+          '"${parsed.cleanTitle}"');
+      await _db.markAsUncategorized(file.id);
+      return;
+    }
+
+    final seriesId = seriesResult.id;
+    print('[MetadataService] TMDB series match: "${seriesResult.title}" '
+        '(id: $seriesId)');
+
+    // ── Step 2: Fetch episode details ────────────────────────────────────
+
+    TmdbEpisodeResult? episodeResult;
+    try {
+      episodeResult = await _client.fetchEpisodeDetails(
+        seriesId,
+        season,
+        episode,
+      );
+    } on TmdbRateLimitException {
+      rethrow;
+    } on TmdbAuthException {
+      rethrow;
+    } catch (e) {
+      print('[MetadataService] Failed to fetch episode details for '
+          '$seCode: $e');
+      // Continue with series-level data only
+    }
+
+    // ── Step 3: Fetch season poster as fallback ──────────────────────────
+
+    String? backdropPath = episodeResult?.stillPath;
+
+    if (backdropPath == null) {
+      try {
+        final seasonResult = await _client.fetchSeasonDetails(
+          seriesId,
+          season,
+        );
+        backdropPath = seasonResult?.posterPath;
+      } catch (e) {
+        print('[MetadataService] Failed to fetch season poster for '
+            'season $season: $e');
+        // Use series backdrop as last resort
+        backdropPath = seriesResult.backdropPath;
+      }
+    }
+
+    // ── Build display title ──────────────────────────────────────────────
+
+    final episodeName = episodeResult?.name;
+    final displayTitle = episodeName != null && episodeName.isNotEmpty
+        ? '${seriesResult.title} - $seCode - $episodeName'
+        : '${seriesResult.title} - $seCode';
+
+    // ── Resolve type and genres ──────────────────────────────────────────
+
+    final resolvedType = _resolveMediaType(seriesResult);
+    final genreString = _client.resolveGenres(seriesResult.genreIds);
+
+    // ── Write to database ────────────────────────────────────────────────
+
+    await _db.updateMetadata(
+      fileId: file.id,
+      tmdbId: seriesId,
+      resolvedMediaType: resolvedType,
+      tmdbTitle: displayTitle,
+      overview: episodeResult?.overview ?? seriesResult.overview,
+      posterPath: seriesResult.posterPath,
+      backdropPath: backdropPath,
+      releaseYear: episodeResult?.airYear ?? seriesResult.releaseYear,
+      voteAverage: episodeResult?.voteAverage ?? seriesResult.voteAverage,
+      genres: genreString.isNotEmpty ? genreString : null,
+      originalLanguage: seriesResult.originalLanguage,
+    );
+
+    print('[MetadataService] Episode metadata saved: $seCode - '
+        '"${episodeName ?? "unknown"}"');
+  }
+
+  // ─── Batch processing ─────────────────────────────────────────────────────
 
   /// Fetch metadata for all unmatched files in the library.
   ///
@@ -167,7 +309,8 @@ class MetadataService {
         ));
         return;
       } catch (e) {
-        print('[MetadataService] Error fetching metadata for "${unmatched[i].fileName}": $e');
+        print('[MetadataService] Error fetching metadata for '
+            '"${unmatched[i].fileName}": $e');
         // Network error or other — mark this file as uncategorized, continue
         await _db.markAsUncategorized(unmatched[i].id);
         _emitStatus(_currentStatus.copyWith(

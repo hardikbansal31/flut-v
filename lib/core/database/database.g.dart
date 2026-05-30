@@ -429,6 +429,18 @@ class $MediaFilesTable extends MediaFiles
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lastWatchedAtMeta = const VerificationMeta(
+    'lastWatchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastWatchedAt =
+      GeneratedColumn<DateTime>(
+        'last_watched_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _tmdbIdMeta = const VerificationMeta('tmdbId');
   @override
   late final GeneratedColumn<int> tmdbId = GeneratedColumn<int>(
@@ -547,6 +559,7 @@ class $MediaFilesTable extends MediaFiles
     lastModified,
     durationMillis,
     positionMillis,
+    lastWatchedAt,
     tmdbId,
     mediaType,
     tmdbTitle,
@@ -654,6 +667,15 @@ class $MediaFilesTable extends MediaFiles
         positionMillis.isAcceptableOrUnknown(
           data['position_millis']!,
           _positionMillisMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_watched_at')) {
+      context.handle(
+        _lastWatchedAtMeta,
+        lastWatchedAt.isAcceptableOrUnknown(
+          data['last_watched_at']!,
+          _lastWatchedAtMeta,
         ),
       );
     }
@@ -778,6 +800,10 @@ class $MediaFilesTable extends MediaFiles
         DriftSqlType.int,
         data['${effectivePrefix}position_millis'],
       ),
+      lastWatchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_watched_at'],
+      ),
       tmdbId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}tmdb_id'],
@@ -858,6 +884,11 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
   /// Last watched position in milliseconds (Phase 3).
   final int? positionMillis;
 
+  /// Timestamp of the last time the user watched this file.
+  /// Updated on every pause/stop so the Continue Watching section can
+  /// determine the most recently watched episode within a TV series.
+  final DateTime? lastWatchedAt;
+
   /// TMDB ID for this media. Non-null means metadata has been matched.
   final int? tmdbId;
 
@@ -898,6 +929,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     required this.lastModified,
     this.durationMillis,
     this.positionMillis,
+    this.lastWatchedAt,
     this.tmdbId,
     this.mediaType,
     this.tmdbTitle,
@@ -925,6 +957,9 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     }
     if (!nullToAbsent || positionMillis != null) {
       map['position_millis'] = Variable<int>(positionMillis);
+    }
+    if (!nullToAbsent || lastWatchedAt != null) {
+      map['last_watched_at'] = Variable<DateTime>(lastWatchedAt);
     }
     if (!nullToAbsent || tmdbId != null) {
       map['tmdb_id'] = Variable<int>(tmdbId);
@@ -975,6 +1010,9 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       positionMillis: positionMillis == null && nullToAbsent
           ? const Value.absent()
           : Value(positionMillis),
+      lastWatchedAt: lastWatchedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastWatchedAt),
       tmdbId: tmdbId == null && nullToAbsent
           ? const Value.absent()
           : Value(tmdbId),
@@ -1024,6 +1062,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       lastModified: serializer.fromJson<DateTime>(json['lastModified']),
       durationMillis: serializer.fromJson<int?>(json['durationMillis']),
       positionMillis: serializer.fromJson<int?>(json['positionMillis']),
+      lastWatchedAt: serializer.fromJson<DateTime?>(json['lastWatchedAt']),
       tmdbId: serializer.fromJson<int?>(json['tmdbId']),
       mediaType: serializer.fromJson<String?>(json['mediaType']),
       tmdbTitle: serializer.fromJson<String?>(json['tmdbTitle']),
@@ -1050,6 +1089,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       'lastModified': serializer.toJson<DateTime>(lastModified),
       'durationMillis': serializer.toJson<int?>(durationMillis),
       'positionMillis': serializer.toJson<int?>(positionMillis),
+      'lastWatchedAt': serializer.toJson<DateTime?>(lastWatchedAt),
       'tmdbId': serializer.toJson<int?>(tmdbId),
       'mediaType': serializer.toJson<String?>(mediaType),
       'tmdbTitle': serializer.toJson<String?>(tmdbTitle),
@@ -1074,6 +1114,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     DateTime? lastModified,
     Value<int?> durationMillis = const Value.absent(),
     Value<int?> positionMillis = const Value.absent(),
+    Value<DateTime?> lastWatchedAt = const Value.absent(),
     Value<int?> tmdbId = const Value.absent(),
     Value<String?> mediaType = const Value.absent(),
     Value<String?> tmdbTitle = const Value.absent(),
@@ -1099,6 +1140,9 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     positionMillis: positionMillis.present
         ? positionMillis.value
         : this.positionMillis,
+    lastWatchedAt: lastWatchedAt.present
+        ? lastWatchedAt.value
+        : this.lastWatchedAt,
     tmdbId: tmdbId.present ? tmdbId.value : this.tmdbId,
     mediaType: mediaType.present ? mediaType.value : this.mediaType,
     tmdbTitle: tmdbTitle.present ? tmdbTitle.value : this.tmdbTitle,
@@ -1136,6 +1180,9 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       positionMillis: data.positionMillis.present
           ? data.positionMillis.value
           : this.positionMillis,
+      lastWatchedAt: data.lastWatchedAt.present
+          ? data.lastWatchedAt.value
+          : this.lastWatchedAt,
       tmdbId: data.tmdbId.present ? data.tmdbId.value : this.tmdbId,
       mediaType: data.mediaType.present ? data.mediaType.value : this.mediaType,
       tmdbTitle: data.tmdbTitle.present ? data.tmdbTitle.value : this.tmdbTitle,
@@ -1172,6 +1219,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           ..write('lastModified: $lastModified, ')
           ..write('durationMillis: $durationMillis, ')
           ..write('positionMillis: $positionMillis, ')
+          ..write('lastWatchedAt: $lastWatchedAt, ')
           ..write('tmdbId: $tmdbId, ')
           ..write('mediaType: $mediaType, ')
           ..write('tmdbTitle: $tmdbTitle, ')
@@ -1187,7 +1235,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     filePath,
     fileName,
@@ -1198,6 +1246,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     lastModified,
     durationMillis,
     positionMillis,
+    lastWatchedAt,
     tmdbId,
     mediaType,
     tmdbTitle,
@@ -1208,7 +1257,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     voteAverage,
     genres,
     originalLanguage,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1223,6 +1272,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           other.lastModified == this.lastModified &&
           other.durationMillis == this.durationMillis &&
           other.positionMillis == this.positionMillis &&
+          other.lastWatchedAt == this.lastWatchedAt &&
           other.tmdbId == this.tmdbId &&
           other.mediaType == this.mediaType &&
           other.tmdbTitle == this.tmdbTitle &&
@@ -1246,6 +1296,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
   final Value<DateTime> lastModified;
   final Value<int?> durationMillis;
   final Value<int?> positionMillis;
+  final Value<DateTime?> lastWatchedAt;
   final Value<int?> tmdbId;
   final Value<String?> mediaType;
   final Value<String?> tmdbTitle;
@@ -1267,6 +1318,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     this.lastModified = const Value.absent(),
     this.durationMillis = const Value.absent(),
     this.positionMillis = const Value.absent(),
+    this.lastWatchedAt = const Value.absent(),
     this.tmdbId = const Value.absent(),
     this.mediaType = const Value.absent(),
     this.tmdbTitle = const Value.absent(),
@@ -1289,6 +1341,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     required DateTime lastModified,
     this.durationMillis = const Value.absent(),
     this.positionMillis = const Value.absent(),
+    this.lastWatchedAt = const Value.absent(),
     this.tmdbId = const Value.absent(),
     this.mediaType = const Value.absent(),
     this.tmdbTitle = const Value.absent(),
@@ -1316,6 +1369,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Expression<DateTime>? lastModified,
     Expression<int>? durationMillis,
     Expression<int>? positionMillis,
+    Expression<DateTime>? lastWatchedAt,
     Expression<int>? tmdbId,
     Expression<String>? mediaType,
     Expression<String>? tmdbTitle,
@@ -1338,6 +1392,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       if (lastModified != null) 'last_modified': lastModified,
       if (durationMillis != null) 'duration_millis': durationMillis,
       if (positionMillis != null) 'position_millis': positionMillis,
+      if (lastWatchedAt != null) 'last_watched_at': lastWatchedAt,
       if (tmdbId != null) 'tmdb_id': tmdbId,
       if (mediaType != null) 'media_type': mediaType,
       if (tmdbTitle != null) 'tmdb_title': tmdbTitle,
@@ -1362,6 +1417,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Value<DateTime>? lastModified,
     Value<int?>? durationMillis,
     Value<int?>? positionMillis,
+    Value<DateTime?>? lastWatchedAt,
     Value<int?>? tmdbId,
     Value<String?>? mediaType,
     Value<String?>? tmdbTitle,
@@ -1384,6 +1440,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       lastModified: lastModified ?? this.lastModified,
       durationMillis: durationMillis ?? this.durationMillis,
       positionMillis: positionMillis ?? this.positionMillis,
+      lastWatchedAt: lastWatchedAt ?? this.lastWatchedAt,
       tmdbId: tmdbId ?? this.tmdbId,
       mediaType: mediaType ?? this.mediaType,
       tmdbTitle: tmdbTitle ?? this.tmdbTitle,
@@ -1429,6 +1486,9 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     }
     if (positionMillis.present) {
       map['position_millis'] = Variable<int>(positionMillis.value);
+    }
+    if (lastWatchedAt.present) {
+      map['last_watched_at'] = Variable<DateTime>(lastWatchedAt.value);
     }
     if (tmdbId.present) {
       map['tmdb_id'] = Variable<int>(tmdbId.value);
@@ -1476,6 +1536,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
           ..write('lastModified: $lastModified, ')
           ..write('durationMillis: $durationMillis, ')
           ..write('positionMillis: $positionMillis, ')
+          ..write('lastWatchedAt: $lastWatchedAt, ')
           ..write('tmdbId: $tmdbId, ')
           ..write('mediaType: $mediaType, ')
           ..write('tmdbTitle: $tmdbTitle, ')
@@ -1805,6 +1866,7 @@ typedef $$MediaFilesTableCreateCompanionBuilder =
       required DateTime lastModified,
       Value<int?> durationMillis,
       Value<int?> positionMillis,
+      Value<DateTime?> lastWatchedAt,
       Value<int?> tmdbId,
       Value<String?> mediaType,
       Value<String?> tmdbTitle,
@@ -1828,6 +1890,7 @@ typedef $$MediaFilesTableUpdateCompanionBuilder =
       Value<DateTime> lastModified,
       Value<int?> durationMillis,
       Value<int?> positionMillis,
+      Value<DateTime?> lastWatchedAt,
       Value<int?> tmdbId,
       Value<String?> mediaType,
       Value<String?> tmdbTitle,
@@ -1918,6 +1981,11 @@ class $$MediaFilesTableFilterComposer
 
   ColumnFilters<int> get positionMillis => $composableBuilder(
     column: $table.positionMillis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastWatchedAt => $composableBuilder(
+    column: $table.lastWatchedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2049,6 +2117,11 @@ class $$MediaFilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get lastWatchedAt => $composableBuilder(
+    column: $table.lastWatchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get tmdbId => $composableBuilder(
     column: $table.tmdbId,
     builder: (column) => ColumnOrderings(column),
@@ -2169,6 +2242,11 @@ class $$MediaFilesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get lastWatchedAt => $composableBuilder(
+    column: $table.lastWatchedAt,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get tmdbId =>
       $composableBuilder(column: $table.tmdbId, builder: (column) => column);
 
@@ -2271,6 +2349,7 @@ class $$MediaFilesTableTableManager
                 Value<DateTime> lastModified = const Value.absent(),
                 Value<int?> durationMillis = const Value.absent(),
                 Value<int?> positionMillis = const Value.absent(),
+                Value<DateTime?> lastWatchedAt = const Value.absent(),
                 Value<int?> tmdbId = const Value.absent(),
                 Value<String?> mediaType = const Value.absent(),
                 Value<String?> tmdbTitle = const Value.absent(),
@@ -2292,6 +2371,7 @@ class $$MediaFilesTableTableManager
                 lastModified: lastModified,
                 durationMillis: durationMillis,
                 positionMillis: positionMillis,
+                lastWatchedAt: lastWatchedAt,
                 tmdbId: tmdbId,
                 mediaType: mediaType,
                 tmdbTitle: tmdbTitle,
@@ -2315,6 +2395,7 @@ class $$MediaFilesTableTableManager
                 required DateTime lastModified,
                 Value<int?> durationMillis = const Value.absent(),
                 Value<int?> positionMillis = const Value.absent(),
+                Value<DateTime?> lastWatchedAt = const Value.absent(),
                 Value<int?> tmdbId = const Value.absent(),
                 Value<String?> mediaType = const Value.absent(),
                 Value<String?> tmdbTitle = const Value.absent(),
@@ -2336,6 +2417,7 @@ class $$MediaFilesTableTableManager
                 lastModified: lastModified,
                 durationMillis: durationMillis,
                 positionMillis: positionMillis,
+                lastWatchedAt: lastWatchedAt,
                 tmdbId: tmdbId,
                 mediaType: mediaType,
                 tmdbTitle: tmdbTitle,

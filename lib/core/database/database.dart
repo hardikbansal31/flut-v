@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -47,6 +47,9 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(mediaFiles, mediaFiles.voteAverage);
           await m.addColumn(mediaFiles, mediaFiles.genres);
           await m.addColumn(mediaFiles, mediaFiles.originalLanguage);
+        }
+        if (from < 4) {
+          await m.addColumn(mediaFiles, mediaFiles.lastWatchedAt);
         }
       },
     );
@@ -138,11 +141,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Updates the watch progress for a specific file.
+  ///
+  /// Also stamps [lastWatchedAt] so the Continue Watching section can
+  /// determine which episode was interacted with most recently.
   Future<void> updateWatchProgress(int fileId, int positionMillis, int durationMillis) async {
     await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
       MediaFilesCompanion(
         positionMillis: Value(positionMillis),
         durationMillis: Value(durationMillis),
+        lastWatchedAt: Value(DateTime.now()),
       ),
     );
   }

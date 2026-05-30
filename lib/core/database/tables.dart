@@ -62,6 +62,11 @@ class MediaFiles extends Table {
   /// Last watched position in milliseconds (Phase 3).
   IntColumn get positionMillis => integer().nullable()();
 
+  /// Timestamp of the last time the user watched this file.
+  /// Updated on every pause/stop so the Continue Watching section can
+  /// determine the most recently watched episode within a TV series.
+  DateTimeColumn get lastWatchedAt => dateTime().nullable()();
+
   // ── Phase 4: TMDB metadata columns ──────────────────────────────────────
 
   /// TMDB ID for this media. Non-null means metadata has been matched.

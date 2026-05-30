@@ -83,6 +83,52 @@ class TmdbSearchResult {
   }
 }
 
+/// Episode details from TMDB's /tv/{id}/season/{s}/episode/{e} endpoint.
+class TmdbEpisodeResult {
+  final String? name;
+  final String? overview;
+  final String? stillPath;
+  final String? airDate;
+  final double voteAverage;
+
+  const TmdbEpisodeResult({
+    this.name,
+    this.overview,
+    this.stillPath,
+    this.airDate,
+    this.voteAverage = 0,
+  });
+
+  factory TmdbEpisodeResult.fromJson(Map<String, dynamic> json) {
+    return TmdbEpisodeResult(
+      name: json['name'] as String?,
+      overview: json['overview'] as String?,
+      stillPath: json['still_path'] as String?,
+      airDate: json['air_date'] as String?,
+      voteAverage: (json['vote_average'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  /// Extract year from air_date string (e.g. "2017-10-06" → 2017).
+  int? get airYear {
+    if (airDate == null || airDate!.length < 4) return null;
+    return int.tryParse(airDate!.substring(0, 4));
+  }
+}
+
+/// Season details from TMDB's /tv/{id}/season/{s} endpoint.
+class TmdbSeasonResult {
+  final String? posterPath;
+
+  const TmdbSeasonResult({this.posterPath});
+
+  factory TmdbSeasonResult.fromJson(Map<String, dynamic> json) {
+    return TmdbSeasonResult(
+      posterPath: json['poster_path'] as String?,
+    );
+  }
+}
+
 // ─── Exception types ────────────────────────────────────────────────────────
 
 /// Thrown when the TMDB API returns a rate limit response (HTTP 429).
@@ -186,6 +232,82 @@ class TmdbClient {
     }
 
     return null;
+  }
+
+  /// Search specifically for TV shows.
+  ///
+  /// Uses `/search/tv` instead of `/search/multi` for more accurate TV
+  /// matching. Supports a [language] parameter for non-English fallback.
+  /// Returns the first result, or null if nothing found.
+  Future<TmdbSearchResult?> searchTv(
+    String query, {
+    String language = 'en-US',
+  }) async {
+    final params = {
+      'api_key': apiKey,
+      'query': query,
+      'language': language,
+      'include_adult': 'false',
+    };
+
+    final uri =
+        Uri.parse('$_baseUrl/search/tv').replace(queryParameters: params);
+    final response = await _request(uri);
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final results = data['results'] as List<dynamic>? ?? [];
+
+    if (results.isEmpty) return null;
+
+    // Build a TmdbSearchResult from the TV search response.
+    // /search/tv does not include media_type, so we inject it.
+    final first = results.first as Map<String, dynamic>;
+    first['media_type'] = 'tv';
+    return TmdbSearchResult.fromJson(first);
+  }
+
+  /// Fetch details for a specific TV episode.
+  ///
+  /// Calls `GET /tv/{seriesId}/season/{season}/episode/{episode}`.
+  /// Returns null if the endpoint returns 404 (episode not found).
+  Future<TmdbEpisodeResult?> fetchEpisodeDetails(
+    int seriesId,
+    int season,
+    int episode,
+  ) async {
+    final uri = Uri.parse(
+      '$_baseUrl/tv/$seriesId/season/$season/episode/$episode',
+    ).replace(queryParameters: {'api_key': apiKey});
+
+    try {
+      final response = await _request(uri);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return TmdbEpisodeResult.fromJson(data);
+    } on TmdbApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// Fetch details for a TV season (mainly for the poster fallback).
+  ///
+  /// Calls `GET /tv/{seriesId}/season/{season}`.
+  /// Returns null if the endpoint returns 404.
+  Future<TmdbSeasonResult?> fetchSeasonDetails(
+    int seriesId,
+    int season,
+  ) async {
+    final uri = Uri.parse(
+      '$_baseUrl/tv/$seriesId/season/$season',
+    ).replace(queryParameters: {'api_key': apiKey});
+
+    try {
+      final response = await _request(uri);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return TmdbSeasonResult.fromJson(data);
+    } on TmdbApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   /// Resolve genre IDs to a comma-separated string of genre names.

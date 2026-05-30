@@ -53,6 +53,24 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   }
 
   Future<void> _initPlayer() async {
+    // ── Guard: verify the file still exists on disk ──
+    final file = File(widget.mediaFile.filePath);
+    if (!await file.exists()) {
+      // Remove the stale entry from the database.
+      final db = ref.read(databaseProvider);
+      await db.removeMediaFileByPath(widget.mediaFile.filePath);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File not found: ${widget.mediaFile.fileName}'),
+            backgroundColor: Colors.red[800],
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
     final initialPosition = widget.mediaFile.positionMillis ?? 0;
 
     // ── Subtitle configuration (mpv properties via NativePlayer) ──
@@ -60,21 +78,22 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     // • The sub-font / sub-border-size / sub-margin-y values are the
     //   fallback style used when a track has NO embedded styling (e.g.
     //   plain SRT).  They do NOT override ASS styles.
+    //
+    // NOTE: sub-font-size is in mpv's normalised units (scaled to 720px
+    // window height), NOT physical pixels.  Do NOT multiply by DPR —
+    // the DPR fix is handled by resizing the render texture below.
     if (player.platform is NativePlayer) {
       final native = player.platform as NativePlayer;
       await native.setProperty('sub-ass-override', 'no');
 
-      // Native fallback style for unstyled subs (SRT, VTT, etc.)
-      // Multiplied by devicePixelRatio so mpv renders sharp at e.g., 125% OS scaling
-      final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
-
+      // Fallback style for unstyled subs (SRT, VTT, etc.)
       await native.setProperty('sub-font', 'Arial');
-      await native.setProperty('sub-font-size', '${(48 * dpr).round()}');
+      await native.setProperty('sub-font-size', '48');
       await native.setProperty('sub-color', '#FFFFFFFF');
-      await native.setProperty('sub-border-size', '${(4 * dpr).round()}');
+      await native.setProperty('sub-border-size', '4');
       await native.setProperty('sub-border-color', '#FF000000');
       await native.setProperty('sub-shadow-offset', '0');
-      await native.setProperty('sub-margin-y', '${(22 * dpr).round()}');
+      await native.setProperty('sub-margin-y', '22');
     }
 
     _durationSub = player.stream.duration.listen((duration) {
@@ -100,12 +119,44 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     // player.open() resolves before mpv finishes demuxing, so an
     // immediate seek is silently dropped.  Waiting for a non-zero
     // duration guarantees the file is loaded and seekable.
+    // Use a timeout to avoid hanging if the stream closes unexpectedly
+    // (e.g. corrupt or deleted file).
     if (initialPosition > 0) {
-      await player.stream.duration.firstWhere((d) => d > Duration.zero);
-      await player.seek(Duration(milliseconds: initialPosition));
+      try {
+        await player.stream.duration
+            .firstWhere((d) => d > Duration.zero)
+            .timeout(const Duration(seconds: 10));
+        await player.seek(Duration(milliseconds: initialPosition));
+      } catch (_) {
+        // Duration never reached a valid value — skip seeking.
+      }
     }
 
     await player.play();
+
+    // ── HiDPI fix: resize the mpv render texture to physical pixels ──
+    //
+    // By default media_kit creates the texture at the video's native
+    // resolution (e.g. 1280×720 for a 720p file).  mpv + libass render
+    // subtitles into that texture.  At fractional OS scaling (e.g. 125%)
+    // the texture is upscaled by the compositor → blurry subtitles.
+    //
+    // Haruna doesn't have this problem because mpv renders directly to
+    // the native window at the screen's physical pixel resolution.
+    //
+    // Fix: after the first frame is rendered (so the videoParams listener
+    // in NativeVideoController has already fired and won't override us),
+    // resize the texture to the screen's physical dimensions.  This makes
+    // libass render subtitles at the display's native resolution.
+    await controller.waitUntilFirstFrameRendered;
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final physicalSize = view.physicalSize;
+    if (physicalSize.width > 0 && physicalSize.height > 0) {
+      await controller.setSize(
+        width: physicalSize.width.round(),
+        height: physicalSize.height.round(),
+      );
+    }
   }
 
   Future<void> _enterFullscreen() async {
@@ -250,6 +301,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           ),
           child: Video(
             controller: controller,
+            // Bicubic interpolation — much sharper than the default bilinear
+            // when there's any non-integer scaling (e.g. 125% OS scaling).
+            filterQuality: FilterQuality.high,
             // Flutter-side fallback style — only applies when libass is
             // NOT handling rendering (rare).  Matches the mpv fallback:
             // Arial, 3 pt uniform border, positioned near the bottom.

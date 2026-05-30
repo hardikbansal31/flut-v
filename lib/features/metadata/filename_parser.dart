@@ -1,23 +1,37 @@
-/// Filename parser for extracting clean titles and years from media filenames.
+/// Filename parser for extracting clean titles, years, and TV episode info
+/// from media filenames.
 ///
 /// Handles common patterns like:
-///   - `Blade.Runner.2049.2017.1080p.BluRay.x264.mkv` → ("Blade Runner 2049", 2017)
-///   - `[SubGroup] Attack on Titan S04E01 [1080p].mkv` → ("Attack on Titan S04E01", null)
-///   - `The_Batman_(2022)_WEB-DL.mp4` → ("The Batman", 2022)
+///   - `Blade.Runner.2049.2017.1080p.BluRay.x264.mkv` → (title: "Blade Runner 2049", year: 2017)
+///   - `[SubGroup] Attack on Titan S04E01 [1080p].mkv` → (title: "Attack on Titan", S04E01)
+///   - `The_Batman_(2022)_WEB-DL.mp4` → (title: "The Batman", year: 2022)
+///   - `[HorribleSubs] My Hero Academia - 15 [720p].mkv` → (title: "My Hero Academia", S01E15)
 library;
 
 /// Result of parsing a media filename.
 class ParsedFilename {
   final String cleanTitle;
   final int? year;
+  final int? season;
+  final int? episode;
 
-  const ParsedFilename({required this.cleanTitle, this.year});
+  /// True when a season/episode pair was extracted (standard or absolute).
+  bool get isTvShow => season != null && episode != null;
+
+  const ParsedFilename({
+    required this.cleanTitle,
+    this.year,
+    this.season,
+    this.episode,
+  });
 
   @override
-  String toString() => 'ParsedFilename("$cleanTitle", year: $year)';
+  String toString() =>
+      'ParsedFilename("$cleanTitle", year: $year, S${season}E$episode)';
 }
 
-/// Parses video filenames to extract a clean title and optional year.
+/// Parses video filenames to extract a clean title, optional year, and
+/// optional season/episode numbers.
 class FilenameParser {
   FilenameParser._();
 
@@ -60,41 +74,70 @@ class FilenameParser {
     caseSensitive: false,
   );
 
-  // Season/Episode patterns — keep these in the title for TV detection
-  static final _seasonEpisodePattern = RegExp(
-    r'[Ss]\d{1,2}[Ee]\d{1,2}',
+  // ── TV episode patterns ───────────────────────────────────────────────────
+
+  /// Standard season/episode code: S02E01, S2E4 (case-insensitive).
+  static final _sxxExxPattern = RegExp(
+    r'[Ss](\d{1,2})[Ee](\d{1,2})',
   );
 
-  /// Parse a filename (without extension) into a clean title and optional year.
+  /// Alternative season × episode code: 2x04, 03x12.
+  static final _crossPattern = RegExp(
+    r'(\d{1,2})[xX](\d{2,3})',
+  );
+
+  /// Parse a filename (without extension) into a clean title, optional year,
+  /// and optional season/episode numbers.
   static ParsedFilename parse(String filename) {
     var working = filename;
 
-    // 1. Try to extract year before we strip brackets (year might be in parens)
+    // ── Step 1: Extract season/episode BEFORE any other stripping ─────────
+
+    int? season;
+    int? episode;
+
+    // Try SxxExx first (most specific)
+    var seMatch = _sxxExxPattern.firstMatch(working);
+    if (seMatch != null) {
+      season = int.parse(seMatch.group(1)!);
+      episode = int.parse(seMatch.group(2)!);
+      // Truncate title at the SxxExx token — everything before it is the title
+      working = working.substring(0, seMatch.start);
+    } else {
+      // Try NxNN format: 2x04, 03x12
+      final crossMatch = _crossPattern.firstMatch(working);
+      if (crossMatch != null) {
+        season = int.parse(crossMatch.group(1)!);
+        episode = int.parse(crossMatch.group(2)!);
+        working = working.substring(0, crossMatch.start);
+      }
+    }
+
+    // ── Step 2: Extract year before we strip brackets ────────────────────
+
     int? year;
-    
+
     // Check for year in parentheses/brackets first: (2017) or [2017]
     final bracketYearMatch = RegExp(r'[\(\[]((?:19|20)\d{2})[\)\]]').firstMatch(working);
     if (bracketYearMatch != null) {
       year = int.parse(bracketYearMatch.group(1)!);
     }
 
-    // 2. Strip group tags in brackets, but preserve S01E02 style markers
-    // Save season/episode info if present
-    final seMatch = _seasonEpisodePattern.firstMatch(working);
-    final seasonEpisode = seMatch?.group(0);
+    // ── Step 3: Strip bracketed groups ───────────────────────────────────
 
     working = working.replaceAll(_groupBracketPattern, ' ');
 
-    // 3. Strip resolution, source, codec, filler tags
+    // ── Step 4: Strip resolution, source, codec, filler tags ────────────
+
     working = working.replaceAll(_resolutionPattern, ' ');
     working = working.replaceAll(_sourcePattern, ' ');
     working = working.replaceAll(_codecPattern, ' ');
     working = working.replaceAll(_fillerPattern, ' ');
     working = working.replaceAll(_ordinalPattern, ' ');
 
-    // 4. If we didn't find a year in brackets, try to find it in the cleaned string
+    // ── Step 5: Try year extraction from cleaned string if not found ────
+
     if (year == null) {
-      // Try to find year pattern
       final yearMatch = _yearPattern.firstMatch(working) ??
           _yearEndPattern.firstMatch(working);
       if (yearMatch != null) {
@@ -108,24 +151,51 @@ class FilenameParser {
       working = working.replaceAll(RegExp(r'[\(\[]?' + year.toString() + r'[\)\]]?'), ' ');
     }
 
-    // 5. Replace dots, underscores, hyphens with spaces
+    // ── Step 6: Replace dots, underscores, hyphens with spaces ──────────
+
     working = working.replaceAll(RegExp(r'[._]'), ' ');
-    // Replace multiple hyphens (but keep single ones for compound words)
     working = working.replaceAll(RegExp(r'\s*-\s*'), ' ');
 
-    // 6. Re-add season/episode if it was present and got stripped
-    if (seasonEpisode != null && !working.contains(seasonEpisode)) {
-      working = '$working $seasonEpisode';
+    // ── Step 7: Try absolute episode number if no SxxExx was found ──────
+    //
+    // Patterns like "Naruto - 135" or "My Hero Academia - 15".
+    // We do this AFTER dot/underscore replacement so "Title - 15" is clean.
+
+    if (season == null && episode == null) {
+      // Look for a trailing number that looks like an absolute episode.
+      // Match a standalone number at the very end of the cleaned string.
+      final absMatch = RegExp(r'\s+(\d{1,4})\s*$').firstMatch(working);
+      if (absMatch != null) {
+        final candidateEp = int.parse(absMatch.group(1)!);
+        // Sanity check: must be >= 1 and the number shouldn't look like a year
+        if (candidateEp >= 1 && candidateEp <= 9999 &&
+            !(candidateEp >= 1900 && candidateEp <= 2099)) {
+          season = 1;
+          episode = candidateEp;
+          working = working.substring(0, absMatch.start);
+          print('[FilenameParser] Warning: absolute episode number ($candidateEp) '
+              'detected, assuming season 1');
+        }
+      }
     }
 
-    // 7. Clean up whitespace
+    // ── Step 8: Final cleanup ───────────────────────────────────────────
+
+    // Remove any remaining trailing dots, dashes, underscores, whitespace
+    working = working.replaceAll(RegExp(r'[\s._-]+$'), '');
+    working = working.replaceAll(RegExp(r'^[\s._-]+'), '');
     working = working.replaceAll(RegExp(r'\s+'), ' ').trim();
 
-    // 8. If we end up with an empty string, fall back to the original
+    // If we end up with an empty string, fall back to the original
     if (working.isEmpty) {
       working = filename.replaceAll(RegExp(r'[._]'), ' ').trim();
     }
 
-    return ParsedFilename(cleanTitle: working, year: year);
+    return ParsedFilename(
+      cleanTitle: working,
+      year: year,
+      season: season,
+      episode: episode,
+    );
   }
 }
