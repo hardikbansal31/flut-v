@@ -13,14 +13,10 @@ class MediaCard extends StatelessWidget {
   const MediaCard({
     super.key,
     required this.item,
-    this.width = 140,
-    this.height = 210,
     this.onTap,
   });
 
   final MediaItem item;
-  final double width;
-  final double height;
   final VoidCallback? onTap;
 
   @override
@@ -29,107 +25,76 @@ class MediaCard extends StatelessWidget {
     final hasPoster = item.posterUrl != null;
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
-    return _HoverScaleWrapper(
-      width: width,
-      height: height,
-      onTap: onTap,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // ── Poster image or gradient fallback ──
-          if (hasPoster)
-            CachedNetworkImage(
-              imageUrl: item.posterUrl!,
-              fit: BoxFit.cover,
-              memCacheWidth: (300 * dpr).round(),
-              memCacheHeight: (450 * dpr).round(),
-              placeholder: (context, url) => _GradientPlaceholder(
-                colors: colors,
-                type: item.type,
-              ),
-              errorWidget: (context, url, error) => _GradientPlaceholder(
-                colors: colors,
-                type: item.type,
-              ),
-            )
-          else
-            _GradientPlaceholder(
-              colors: colors,
-              type: item.type,
-            ),
-
-          // ── Bottom info gradient ──
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.85),
-                  ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HoverScaleWrapper(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Poster image or gradient fallback ──
+            AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: hasPoster
+                    ? CachedNetworkImage(
+                        imageUrl: item.posterUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        memCacheWidth: (300 * dpr).round(),
+                          memCacheHeight: (450 * dpr).round(),
+                          placeholder: (context, url) => _GradientPlaceholder(
+                            colors: colors,
+                            type: item.type,
+                          ),
+                          errorWidget: (context, url, error) => _GradientPlaceholder(
+                            colors: colors,
+                            type: item.type,
+                          ),
+                        )
+                      : _GradientPlaceholder(
+                          colors: colors,
+                          type: item.type,
+                        ),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+              // ── Bottom info ──
+              const SizedBox(height: 8),
+              Text(
+                item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.cardTitle,
+              ),
+              const SizedBox(height: 4),
+              Row(
                 children: [
-                  Text(
-                    item.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      height: 1.3,
+                  if (item.year != null)
+                    Text(
+                      '${item.year}',
+                      style: AppTextStyles.cardMeta,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (item.year != null)
-                        Text(
-                          '${item.year}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: kMutedText,
-                          ),
-                        ),
-                      if (item.rating != null) ...[
-                        const SizedBox(width: 6),
-                        const Icon(Icons.star_rounded,
-                            size: 12, color: kSecondaryAccent),
-                        const SizedBox(width: 2),
-                        Text(
-                          item.rating!.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: kSecondaryAccent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                  if (item.year != null && item.rating != null)
+                    const SizedBox(width: 6),
+                  if (item.rating != null) ...[
+                    const Icon(Icons.star_rounded,
+                        size: 12, color: kSecondaryAccent),
+                    const SizedBox(width: 2),
+                    Text(
+                      item.rating!.toStringAsFixed(1),
+                      style: AppTextStyles.cardRating,
+                    ),
+                  ],
                 ],
               ),
-            ),
+            ],
           ),
-          
-          // ── Rating badge ──
-          if (item.rating != null)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _RatingBadge(rating: item.rating!),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -137,14 +102,10 @@ class MediaCard extends StatelessWidget {
 class _HoverScaleWrapper extends StatefulWidget {
   const _HoverScaleWrapper({
     required this.child,
-    required this.width,
-    required this.height,
     this.onTap,
   });
 
   final Widget child;
-  final double width;
-  final double height;
   final VoidCallback? onTap;
 
   @override
@@ -164,8 +125,6 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          width: widget.width,
-          height: widget.height,
           transform: Matrix4.diagonal3Values(
             _hovering ? 1.05 : 1.0,
             _hovering ? 1.05 : 1.0,
@@ -192,17 +151,18 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
           ),
           clipBehavior: Clip.antiAlias,
           child: Stack(
-            fit: StackFit.expand,
             children: [
               widget.child,
               if (_hovering)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  child: const Center(
-                    child: Icon(
-                      Icons.play_circle_fill_rounded,
-                      size: 48,
-                      color: Colors.white,
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: const Center(
+                      child: Icon(
+                        Icons.play_circle_fill_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -214,37 +174,6 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
   }
 }
 
-class _RatingBadge extends StatelessWidget {
-  const _RatingBadge({required this.rating});
-  final double rating;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star_rounded, size: 12, color: kSecondaryAccent),
-          const SizedBox(width: 4),
-          Text(
-            rating.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Gradient placeholder shown when no poster image is available or while loading.
 class _GradientPlaceholder extends StatelessWidget {

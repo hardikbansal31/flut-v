@@ -25,14 +25,13 @@ import 'package:flutter_video/core/settings/library_management_screen.dart';
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
-import 'package:flutter_video/features/browse/screens/series_detail_screen.dart';
+import 'package:flutter_video/features/browse/screens/media_detail_screen.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_service.dart';
 import 'package:flutter_video/features/browse/widgets/continue_watching_card.dart';
 import 'package:flutter_video/features/browse/widgets/hero_banner.dart';
 import 'package:flutter_video/features/browse/widgets/horizontal_media_row.dart';
-import 'package:flutter_video/features/browse/widgets/media_card.dart';
 import 'package:flutter_video/features/browse/widgets/media_grid.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -83,7 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
-            backgroundColor: Colors.red[800],
+            backgroundColor: AppTheme.errorSnackbar,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -120,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(child: SizedBox(height: 32)),
 
           // 3. Recently Added
-          SliverToBoxAdapter(child: _RecentlyAddedSection()),
+          const _RecentlyAddedSection(),
 
           // 4–7. Category grids (returns multiple slivers internally)
           _CategoryGridsSliverSection(),
@@ -165,34 +164,82 @@ class _HeroBannerSectionState extends ConsumerState<_HeroBannerSection> {
     final files = asyncFiles.value;
     if (files == null || files.isEmpty) return const SizedBox.shrink();
 
-    // Only compare IDs — metadata fields (poster, rating, etc.) changing
-    // should NOT rebuild the banner.
-    final heroFiles = files.take(5).toList();
-    final newIds = heroFiles.map((f) => f.id.toString()).toList();
+    final allSeries = ref.watch(groupedSeriesProvider);
+
+    final allMediaItems = files.map(MediaItem.fromMediaFile).toList();
+    final movieItems = allMediaItems.where((item) => item.type == MediaType.movie).toList();
+    final tvSeries = allSeries.where((s) => s.type == MediaType.tvShow).toList();
+    final animeSeries = allSeries.where((s) => s.type == MediaType.anime).toList();
+    final uncategorizedItems = allMediaItems.where((item) => item.type == MediaType.uncategorized).toList();
+
+    final aggregatedItems = <MediaItem>[];
+    aggregatedItems.addAll(movieItems);
+    aggregatedItems.addAll(tvSeries.map((s) => MediaItem.fromSeriesItem(s)));
+    aggregatedItems.addAll(animeSeries.map((s) => MediaItem.fromSeriesItem(s)));
+    aggregatedItems.addAll(uncategorizedItems);
+
+    final heroItems = aggregatedItems.take(5).toList();
+    final newIds = heroItems.map((f) => f.id.toString()).toList();
 
     if (_idsEqual(newIds, _trackedIds)) {
-      // Return the exact same widget instance → Flutter skips the subtree.
       return _cachedBanner;
     }
 
     _trackedIds = newIds;
-    final heroItems = heroFiles.map(MediaItem.fromMediaFile).toList();
     _cachedBanner = HeroBanner(
       items: heroItems,
       onPlay: _onPlay,
+      onMoreInfo: _onMoreInfo,
     );
     return _cachedBanner;
   }
 
   void _onPlay(MediaItem item) {
     final files = ref.read(allMediaFilesProvider).value;
-    if (files != null) {
-      final matchingFile =
-          files.firstWhere((file) => file.id.toString() == item.id);
+    final seriesList = ref.read(groupedSeriesProvider);
+    
+    if (item.type == MediaType.movie || item.type == MediaType.uncategorized) {
+      if (files != null) {
+        final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PlayerScreen(mediaFile: matchingFile),
+          ),
+        );
+      }
+    } else {
+      final matchingSeries = seriesList.firstWhere((s) => s.groupKey == item.id);
+      final firstEp = matchingSeries.episodes.first;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PlayerScreen(mediaFile: matchingFile),
+          builder: (context) => PlayerScreen(mediaFile: firstEp),
+        ),
+      );
+    }
+  }
+
+  void _onMoreInfo(MediaItem item) {
+    final files = ref.read(allMediaFilesProvider).value;
+    final seriesList = ref.read(groupedSeriesProvider);
+
+    if (item.type == MediaType.movie || item.type == MediaType.uncategorized) {
+      if (files != null) {
+        final matchingFile = files.firstWhere((file) => file.id.toString() == item.id);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MediaDetailScreen(mediaFile: matchingFile),
+          ),
+        );
+      }
+    } else {
+      final matchingSeries = seriesList.firstWhere((s) => s.groupKey == item.id);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MediaDetailScreen(series: matchingSeries),
         ),
       );
     }
@@ -286,7 +333,7 @@ class _RecentlyAddedSection extends ConsumerWidget {
     final recentlyAddedAsync = ref.watch(recentlyAddedFilesProvider);
     final recentFiles = recentlyAddedAsync.value ?? [];
 
-    if (recentFiles.isEmpty) return const SizedBox.shrink();
+    if (recentFiles.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     // Separate movies from TV/anime
     final movies = recentFiles
@@ -314,45 +361,28 @@ class _RecentlyAddedSection extends ConsumerWidget {
       ));
     }
 
-    if (displayItems.isEmpty) return const SizedBox.shrink();
+    if (displayItems.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        HorizontalMediaRow(
+    return SliverMainAxisGroup(
+      slivers: [
+        ...MediaGrid(
           title: 'Recently Added',
-          itemCount: displayItems.length,
-          height: 215,
+          items: displayItems.map((e) => e.mediaItem).toList(),
           onSeeAll: () {},
-          itemBuilder: (context, index) {
+          onItemTap: (index) {
             final item = displayItems[index];
-            return MediaCard(
-              item: item.mediaItem,
-              onTap: () {
-                if (item.series != null) {
-                  // Navigate to series detail page
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          SeriesDetailScreen(series: item.series!),
-                    ),
-                  );
-                } else if (item.file != null) {
-                  // Navigate to player for movies
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PlayerScreen(mediaFile: item.file!),
-                    ),
-                  );
-                }
-              },
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MediaDetailScreen(
+                  series: item.series,
+                  mediaFile: item.file,
+                ),
+              ),
             );
           },
-        ),
-        const SizedBox(height: 36),
+        ).buildSlivers(context),
+        const SliverToBoxAdapter(child: SizedBox(height: 36)),
       ],
     );
   }
@@ -450,7 +480,7 @@ class _CategoryGridsSliverSectionState
         items: tvItems,
         onSeeAll: () {},
         onItemTap: (index) =>
-            _navigateToSeriesDetail(context, tvSeries[index]),
+            _navigateToMediaDetail(context, series: tvSeries[index]),
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
@@ -461,7 +491,7 @@ class _CategoryGridsSliverSectionState
         items: animeItems,
         onSeeAll: () {},
         onItemTap: (index) =>
-            _navigateToSeriesDetail(context, animeSeries[index]),
+            _navigateToMediaDetail(context, series: animeSeries[index]),
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
@@ -471,8 +501,10 @@ class _CategoryGridsSliverSectionState
         title: 'Uncategorized',
         items: uncategorizedItems,
         onSeeAll: () {},
-        onItemTap: (index) =>
-            _navigateToPlayer(context, uncategorizedItems[index]),
+        onItemTap: (index) {
+          final file = files.firstWhere((f) => f.id.toString() == uncategorizedItems[index].id);
+          _navigateToMediaDetail(context, mediaFile: file);
+        },
       ).buildSlivers(context));
     }
 
@@ -499,11 +531,18 @@ class _CategoryGridsSliverSectionState
     }
   }
 
-  void _navigateToSeriesDetail(BuildContext context, SeriesItem series) {
+  void _navigateToMediaDetail(
+    BuildContext context, {
+    SeriesItem? series,
+    MediaFile? mediaFile,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SeriesDetailScreen(series: series),
+        builder: (_) => MediaDetailScreen(
+          series: series,
+          mediaFile: mediaFile,
+        ),
       ),
     );
   }
@@ -528,17 +567,13 @@ class _FooterSliver extends StatelessWidget {
                 ).createShader(bounds),
                 child: const Text(
                   'FluxPlayer',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+                  style: AppTextStyles.footerTitle,
                 ),
               ),
               const SizedBox(height: 6),
               const Text(
                 'Your media, beautifully organized.',
-                style: TextStyle(color: kMutedText, fontSize: 12),
+                style: AppTextStyles.footerSubtitle,
               ),
             ],
           ),
@@ -573,7 +608,7 @@ class _EmptyLibraryPlaceholder extends ConsumerWidget {
             const SizedBox(height: 16),
             const Text(
               'Your library is empty',
-              style: TextStyle(fontSize: 18, color: Colors.white70),
+              style: AppTextStyles.emptyLibraryTitle,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -629,18 +664,12 @@ class _FetchStatusBar extends ConsumerWidget {
             const SizedBox(width: 12),
             Text(
               'Fetching metadata\u2026 ${fetchStatus.remainingFiles} remaining',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-              ),
+              style: AppTextStyles.fetchStatus,
             ),
             const Spacer(),
             Text(
               '${fetchStatus.processedFiles}/${fetchStatus.totalFiles}',
-              style: const TextStyle(
-                color: kMutedText,
-                fontSize: 12,
-              ),
+              style: AppTextStyles.episodeMeta,
             ),
           ],
         ),
@@ -721,12 +750,7 @@ class _FadingAppBarState extends State<_FadingAppBar> {
                   ).createShader(bounds),
                   child: const Text(
                     'FluxPlayer',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                    ),
+                    style: AppTextStyles.brandTitle,
                   ),
                 ),
               ),
@@ -803,14 +827,13 @@ class _NavItemState extends State<_NavItem> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
-            style: TextStyle(
-              fontSize: 14,
+            style: AppTextStyles.navItem.copyWith(
               fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w400,
               color: widget.isActive
                   ? Colors.white
                   : _hovering
                       ? Colors.white70
-                      : kMutedText,
+                      : AppTheme.mutedText,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -9,6 +9,7 @@ import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_video/core/theme/app_theme.dart';
 
 
 /// Fullscreen player screen using media_kit and window_manager.
@@ -63,7 +64,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('File not found: ${widget.mediaFile.fileName}'),
-            backgroundColor: Colors.red[800],
+            backgroundColor: AppTheme.errorSnackbar,
           ),
         );
         Navigator.of(context).pop();
@@ -184,7 +185,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Subtitles'),
-          backgroundColor: Colors.grey[900],
+          backgroundColor: AppTheme.subtitlesDialogBackground,
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,

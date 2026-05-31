@@ -11,18 +11,24 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/database/database.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
+import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/features/metadata/tmdb_client.dart' as tmdb;
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 
-class SeriesDetailScreen extends StatelessWidget {
-  const SeriesDetailScreen({super.key, required this.series});
+class MediaDetailScreen extends StatelessWidget {
+  const MediaDetailScreen({super.key, this.series, this.mediaFile})
+      : assert(series != null || mediaFile != null);
 
-  final SeriesItem series;
+  final SeriesItem? series;
+  final MediaFile? mediaFile;
 
   @override
   Widget build(BuildContext context) {
-    final seasons = series.seasons;
+    final isSeries = series != null;
+    final item = isSeries
+        ? MediaItem.fromSeriesItem(series!)
+        : MediaItem.fromMediaFile(mediaFile!);
 
     return Scaffold(
       backgroundColor: kBackgroundColor,
@@ -30,55 +36,83 @@ class SeriesDetailScreen extends StatelessWidget {
         slivers: [
           // ── Backdrop banner with back button ──────────────────────────
           SliverToBoxAdapter(
-            child: _BackdropBanner(series: series),
+            child: _BackdropBanner(item: item),
           ),
 
-          // ── Series info section ──────────────────────────────────────
+          // ── Media info section ──────────────────────────────────────
           SliverToBoxAdapter(
-            child: _SeriesInfoSection(series: series),
+            child: _MediaInfoSection(item: item, series: series),
           ),
 
-          // ── Season sections with episode tiles ───────────────────────
-          for (final season in seasons) ...[
-            // Season header
+          // ── Content section ───────────────────────────────────────────
+          if (isSeries)
+            ...series!.seasons.map((season) {
+              return SliverMainAxisGroup(
+                slivers: [
+                  // Season header
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+                      child: Text(
+                        'Season $season',
+                        style: AppTextStyles.sectionSubHeader.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  // Episode list for this season
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final episodes = series!.episodesForSeason(season);
+                          final episode = episodes[index];
+                          return _EpisodeTile(
+                            file: episode,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PlayerScreen(mediaFile: episode),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        childCount: series!.episodesForSeason(season).length,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            })
+          else
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-                child: Text(
-                  'Season $season',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlayerScreen(mediaFile: mediaFile!),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                  label: const Text('Play'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kAccentColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: AppTextStyles.buttonText.copyWith(fontSize: 18),
                   ),
                 ),
               ),
             ),
-            // Episode list for this season
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final episodes = series.episodesForSeason(season);
-                    final episode = episodes[index];
-                    return _EpisodeTile(
-                      file: episode,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PlayerScreen(mediaFile: episode),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  childCount: series.episodesForSeason(season).length,
-                ),
-              ),
-            ),
-          ],
 
           // Bottom padding
           const SliverToBoxAdapter(child: SizedBox(height: 48)),
@@ -91,8 +125,8 @@ class SeriesDetailScreen extends StatelessWidget {
 // ─── Backdrop Banner ────────────────────────────────────────────────────────
 
 class _BackdropBanner extends StatelessWidget {
-  const _BackdropBanner({required this.series});
-  final SeriesItem series;
+  const _BackdropBanner({required this.item});
+  final MediaItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -104,22 +138,22 @@ class _BackdropBanner extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // ── Background image ──
-          if (series.backdropUrl != null)
+          if (item.backdropUrl != null)
             CachedNetworkImage(
-              imageUrl: series.backdropUrl!,
+              imageUrl: item.backdropUrl!,
               fit: BoxFit.cover,
               memCacheWidth: (1280 * dpr).round(),
               memCacheHeight: (720 * dpr).round(),
-              placeholder: (_, __) => Container(color: kSurfaceColor),
-              errorWidget: (_, __, ___) => Container(color: kSurfaceColor),
+              placeholder: (_, _) => Container(color: kSurfaceColor),
+              errorWidget: (_, _, _) => Container(color: kSurfaceColor),
             )
-          else if (series.posterUrl != null)
+          else if (item.posterUrl != null)
             CachedNetworkImage(
-              imageUrl: series.posterUrl!,
+              imageUrl: item.posterUrl!,
               fit: BoxFit.cover,
               memCacheWidth: (500 * dpr).round(),
-              placeholder: (_, __) => Container(color: kSurfaceColor),
-              errorWidget: (_, __, ___) => Container(color: kSurfaceColor),
+              placeholder: (_, _) => Container(color: kSurfaceColor),
+              errorWidget: (_, _, _) => Container(color: kSurfaceColor),
             )
           else
             Container(color: kSurfaceColor),
@@ -169,9 +203,10 @@ class _BackdropBanner extends StatelessWidget {
 
 // ─── Series Info ────────────────────────────────────────────────────────────
 
-class _SeriesInfoSection extends StatelessWidget {
-  const _SeriesInfoSection({required this.series});
-  final SeriesItem series;
+class _MediaInfoSection extends StatelessWidget {
+  const _MediaInfoSection({required this.item, this.series});
+  final MediaItem item;
+  final SeriesItem? series;
 
   @override
   Widget build(BuildContext context) {
@@ -182,33 +217,23 @@ class _SeriesInfoSection extends StatelessWidget {
         children: [
           // ── Title ──
           Text(
-            series.seriesTitle,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.5,
-              height: 1.2,
-            ),
+            item.title,
+            style: AppTextStyles.seriesTitle,
           ),
 
           const SizedBox(height: 10),
 
-          // ── Metadata row: year · rating · episode count ──
+          // ── Metadata row: year · rating · episode count / duration ──
           Wrap(
             spacing: 12,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              if (series.year != null)
+              if (item.year != null)
                 Text(
-                  '${series.year}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: kMutedText,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  '${item.year}',
+                  style: AppTextStyles.seriesMeta,
                 ),
-              if (series.rating != null && series.rating! > 0)
+              if (item.rating != null && item.rating! > 0)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -216,39 +241,35 @@ class _SeriesInfoSection extends StatelessWidget {
                         size: 16, color: kSecondaryAccent),
                     const SizedBox(width: 4),
                     Text(
-                      series.rating!.toStringAsFixed(1),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: kSecondaryAccent,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      item.rating!.toStringAsFixed(1),
+                      style: AppTextStyles.seriesRating,
                     ),
                   ],
                 ),
-              Text(
-                '${series.episodeCount} episode${series.episodeCount != 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: kMutedText,
+              if (series != null) ...[
+                Text(
+                  '${series!.episodeCount} episode${series!.episodeCount != 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMuted,
                 ),
-              ),
-              Text(
-                '${series.seasons.length} season${series.seasons.length != 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: kMutedText,
+                Text(
+                  '${series!.seasons.length} season${series!.seasons.length != 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMuted,
                 ),
-              ),
+              ] else if (item.durationMinutes > 0)
+                Text(
+                  '${item.durationMinutes} min',
+                  style: AppTextStyles.bodyMuted,
+                ),
             ],
           ),
 
           // ── Genres ──
-          if (series.genres.isNotEmpty) ...[
+          if (item.genres.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: series.genres.map((genre) {
+              children: item.genres.map((genre) {
                 return Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -261,10 +282,8 @@ class _SeriesInfoSection extends StatelessWidget {
                   ),
                   child: Text(
                     genre,
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTextStyles.genreTag.copyWith(
                       color: kAccentColor.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 );
@@ -273,16 +292,12 @@ class _SeriesInfoSection extends StatelessWidget {
           ],
 
           // ── Overview ──
-          if (series.overview != null &&
-              series.overview!.isNotEmpty) ...[
+          if (item.overview != null &&
+              item.overview!.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
-              series.overview!,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-                height: 1.5,
-              ),
+              item.overview!,
+              style: AppTextStyles.overview,
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
             ),
@@ -366,9 +381,9 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                           fit: BoxFit.cover,
                           memCacheWidth: (320 * dpr).round(),
                           memCacheHeight: (180 * dpr).round(),
-                          placeholder: (_, __) =>
+                          placeholder: (_, _) =>
                               Container(color: kCardColor),
-                          errorWidget: (_, __, ___) =>
+                          errorWidget: (_, _, _) =>
                               Container(color: kCardColor),
                         )
                       else
@@ -433,9 +448,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                             ),
                             child: Text(
                               'E$epNum',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                              style: AppTextStyles.episodeNumber.copyWith(
                                 color: kAccentColor.withValues(alpha: 0.9),
                               ),
                             ),
@@ -447,11 +460,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                               epName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                              style: AppTextStyles.episodeTitle,
                             ),
                           ),
                         ],
@@ -462,17 +471,13 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                           if (durationLabel != null)
                             Text(
                               durationLabel,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: kMutedText,
-                              ),
+                              style: AppTextStyles.episodeMeta,
                             ),
                           if (hasProgress) ...[
                             const SizedBox(width: 8),
                             Text(
                               '${(progress * 100).round()}% watched',
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: AppTextStyles.progressText.copyWith(
                                 color: kProgressFill.withValues(alpha: 0.8),
                               ),
                             ),

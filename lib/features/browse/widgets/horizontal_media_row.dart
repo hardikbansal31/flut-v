@@ -56,11 +56,7 @@ class HorizontalMediaRow extends StatelessWidget {
                     children: [
                       Text(
                         'See All',
-                        style: TextStyle(
-                          color: kAccentColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppTextStyles.seeAll,
                       ),
                       SizedBox(width: 4),
                       Icon(Icons.arrow_forward_ios_rounded,

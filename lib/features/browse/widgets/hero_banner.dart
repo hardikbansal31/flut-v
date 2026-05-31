@@ -16,10 +16,11 @@ import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 
 class HeroBanner extends StatefulWidget {
-  const HeroBanner({super.key, required this.items, this.onPlay});
+  const HeroBanner({super.key, required this.items, this.onPlay, this.onMoreInfo});
 
   final List<MediaItem> items;
   final ValueChanged<MediaItem>? onPlay;
+  final ValueChanged<MediaItem>? onMoreInfo;
 
   @override
   State<HeroBanner> createState() => _HeroBannerState();
@@ -81,6 +82,7 @@ class _HeroBannerState extends State<HeroBanner> {
               return _HeroBannerSlide(
                 item: item,
                 onPlay: widget.onPlay != null ? () => widget.onPlay!(item) : null,
+                onMoreInfo: widget.onMoreInfo != null ? () => widget.onMoreInfo!(item) : null,
               );
             },
           ),
@@ -123,10 +125,11 @@ class _HeroBannerState extends State<HeroBanner> {
 // ─── Individual slide ───────────────────────────────────────────────────────
 
 class _HeroBannerSlide extends StatelessWidget {
-  const _HeroBannerSlide({required this.item, this.onPlay});
+  const _HeroBannerSlide({required this.item, this.onPlay, this.onMoreInfo});
 
   final MediaItem item;
   final VoidCallback? onPlay;
+  final VoidCallback? onMoreInfo;
 
   @override
   Widget build(BuildContext context) {
@@ -213,11 +216,7 @@ class _HeroBannerSlide extends StatelessWidget {
                       ),
                       child: Text(
                         g,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                        ),
+                        style: AppTextStyles.genreTagHero,
                       ),
                     );
                   }).toList(),
@@ -241,16 +240,12 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.year != null)
                     Text(
                       '${item.year}',
-                      style: const TextStyle(
-                        color: kMutedText,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTextStyles.seriesMeta,
                     ),
                   if (item.year != null && item.rating != null)
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('•', style: TextStyle(color: kMutedText)),
+                      child: Text('•', style: AppTextStyles.textMutedOnly),
                     ),
                   if (item.rating != null) ...[
                     const Icon(Icons.star_rounded,
@@ -258,39 +253,27 @@ class _HeroBannerSlide extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       item.rating!.toStringAsFixed(1),
-                      style: const TextStyle(
-                        color: kSecondaryAccent,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.seriesRating,
                     ),
                   ],
                   if (item.type == MediaType.tvShow) ...[
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('•', style: TextStyle(color: kMutedText)),
+                      child: Text('•', style: AppTextStyles.textMutedOnly),
                     ),
                     const Text(
                       'TV Series',
-                      style: TextStyle(
-                        color: kMutedText,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTextStyles.seriesMeta,
                     ),
                   ],
                   if (item.type == MediaType.anime) ...[
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('•', style: TextStyle(color: kMutedText)),
+                      child: Text('•', style: AppTextStyles.textMutedOnly),
                     ),
                     const Text(
                       'Anime',
-                      style: TextStyle(
-                        color: kMutedText,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTextStyles.seriesMeta,
                     ),
                   ],
                 ],
@@ -304,11 +287,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   item.overview!,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
+                  style: AppTextStyles.overviewHero,
                 ),
 
               const SizedBox(height: 20),
@@ -329,16 +308,13 @@ class _HeroBannerSlide extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+                      textStyle: AppTextStyles.buttonText,
                     ),
                   ),
                   const SizedBox(width: 12),
                   // More info button
                   OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: onMoreInfo,
                     icon: const Icon(Icons.info_outline_rounded, size: 20),
                     label: const Text('More Info'),
                     style: OutlinedButton.styleFrom(
@@ -350,10 +326,7 @@ class _HeroBannerSlide extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
+                      textStyle: AppTextStyles.buttonTextSecondary,
                     ),
                   ),
                 ],

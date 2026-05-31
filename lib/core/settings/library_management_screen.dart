@@ -142,7 +142,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
-            backgroundColor: Colors.red[800],
+            backgroundColor: AppTheme.errorSnackbar,
             duration: const Duration(seconds: 5),
           ),
         );
@@ -162,12 +162,12 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
             // ── TMDB API Key Section ──
             const Text(
               'TMDB API Key',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: AppTextStyles.sectionHeader,
             ),
             const SizedBox(height: 8),
             const Text(
               'Enter your TMDB API key (v3 auth) to fetch movie/TV metadata, posters, and ratings.',
-              style: TextStyle(fontSize: 13, color: kMutedText),
+              style: AppTextStyles.bodyMuted,
             ),
             const SizedBox(height: 12),
             Row(
@@ -249,7 +249,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
             // ── Library Folders Section ──
             const Text(
               'Add a folder to scan for video files:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: AppTextStyles.settingsSectionHeader,
             ),
             const SizedBox(height: 16),
             Row(
@@ -283,7 +283,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
               children: [
                 const Text(
                   'Library Folders',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.sectionHeader,
                 ),
                 ElevatedButton.icon(
                   onPressed: isScanning ? null : _triggerScan,
@@ -303,7 +303,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                 data: (folders) {
                   if (folders.isEmpty) {
                     return const Center(
-                      child: Text('No library folders configured.', style: TextStyle(color: kMutedText)),
+                      child: Text('No library folders configured.', style: AppTextStyles.textMutedOnly),
                     );
                   }
                   

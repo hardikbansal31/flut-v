@@ -54,11 +54,7 @@ class MediaGrid extends StatelessWidget {
                     children: [
                       Text(
                         'See All',
-                        style: TextStyle(
-                          color: kAccentColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppTextStyles.seeAll,
                       ),
                       SizedBox(width: 4),
                       Icon(Icons.arrow_forward_ios_rounded,
@@ -94,7 +90,7 @@ class MediaGrid extends StatelessWidget {
             return SliverGrid(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                childAspectRatio: 0.65,
+                childAspectRatio: 0.52,
                 crossAxisSpacing: 14,
                 mainAxisSpacing: 14,
               ),
@@ -102,8 +98,6 @@ class MediaGrid extends StatelessWidget {
                 (context, index) {
                   return MediaCard(
                     item: items[index],
-                    width: double.infinity,
-                    height: double.infinity,
                     onTap: () {
                       if (onItemTap != null) {
                         onItemTap!(index);
