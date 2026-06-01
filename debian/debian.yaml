@@ -1,0 +1,14 @@
+flutter_app:
+  command: flutter_video
+  arch: x64
+  parent: /usr/local/lib
+  nonInteractive: true
+  control:
+    Package: penguin
+    Version: 1.0.0
+    Architecture: amd64
+    Priority: optional
+    Depends: libgtk-3-0, libmpv2 | libmpv1, libcanberra-gtk-module
+    Maintainer: Hardik Bansal <hardik@example.com>
+    Description: Penguin Media Player
+      A beautiful cross-platform media player with a Netflix-style UI.

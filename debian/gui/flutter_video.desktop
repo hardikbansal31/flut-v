@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Penguin
+Comment=Penguin Media Player - A beautiful cross-platform media player
+Exec=flutter_video
+Icon=flutter_video
+Terminal=false
+Categories=AudioVideo;Video;Player;GTK;
