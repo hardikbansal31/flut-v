@@ -1,4 +1,4 @@
-﻿/// Full-width hero banner with auto-scrolling carousel.
+/// Full-width hero banner with auto-scrolling carousel.
 ///
 /// Displays a featured media item with a dramatic backdrop image (from TMDB)
 /// or gradient fallback, title, metadata chips, synopsis, and action buttons.
@@ -217,7 +217,7 @@ class _HeroBannerSlide extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Year â€¢ Rating row
+              // Year • Rating row
               Row(
                 children: [
                   if (item.year != null)
@@ -228,7 +228,11 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.year != null && item.rating != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('â€¢', style: AppTextStyles.textMutedOnly),
+                      child: Icon(
+                        PhosphorIcons.circleFill,
+                        size: 6,
+                        color: kMutedText,
+                      ),
                     ),
                   if (item.rating != null) ...[
                     Icon(PhosphorIcons.starFill,
@@ -242,7 +246,11 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.type == MediaType.tvShow) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('â€¢', style: AppTextStyles.textMutedOnly),
+                      child: Icon(
+                        PhosphorIcons.circleFill,
+                        size: 6,
+                        color: kMutedText,
+                      ),
                     ),
                     Text(
                       'TV Series',
@@ -252,7 +260,11 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.type == MediaType.anime) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('â€¢', style: AppTextStyles.textMutedOnly),
+                      child: Icon(
+                        PhosphorIcons.circleFill,
+                        size: 6,
+                        color: kMutedText,
+                      ),
                     ),
                     Text(
                       'Anime',
