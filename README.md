@@ -118,7 +118,6 @@ To compile a standalone setup installer, use [Inno Setup](https://jrsoftware.org
 - [ ] Test and optimize for Android, iOS, and Web platforms.
 - [ ] Fix UI stuttering and smooth out animations on linux.
 - [ ] Streamline the automatic media detection and metadata fetching flow.
-- [ ] Fix performance drops and blurry subtitles when using display scaling other than 100%.
 - [ ] Add more comprehensive custom subtitle styling options.
 - [ ] Implement smart playlists or custom collections.
 
