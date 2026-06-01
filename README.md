@@ -68,6 +68,10 @@ To build a release executable:
 flutter build linux
 ```
 
+## Notes
+
+- **Performance**: The app runs significantly smoother when your system display resolution scaling is set to 100%. Additionally, you may experience minor stuttering during the first run as Flutter compiles shaders; performance will improve once shader compilation is complete.
+
 ## TODO
 
 - [ ] Complete Windows support and test native compilation.
