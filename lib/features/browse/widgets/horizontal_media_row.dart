@@ -1,4 +1,4 @@
-/// A labelled horizontal scrolling row of media cards.
+﻿/// A labelled horizontal scrolling row of media cards.
 ///
 /// Used for "Continue Watching", "Recently Added", and similar sections.
 /// Supports both [MediaCard] and [ContinueWatchingCard] via a builder.
@@ -6,7 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class HorizontalMediaRow extends StatelessWidget {
   const HorizontalMediaRow({
@@ -42,7 +42,7 @@ class HorizontalMediaRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Section header ──
+        // â”€â”€ Section header â”€â”€
         Padding(
           padding: padding,
           child: Row(
@@ -60,7 +60,7 @@ class HorizontalMediaRow extends StatelessWidget {
                         style: AppTextStyles.seeAll,
                       ),
                       SizedBox(width: 4),
-                      Icon(PhosphorIcons.caretRight(),
+                      Icon(PhosphorIcons.caretRight,
                           size: 12, color: kAccentColor),
                     ],
                   ),
@@ -71,7 +71,7 @@ class HorizontalMediaRow extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // ── Scrollable card list ──
+        // â”€â”€ Scrollable card list â”€â”€
         SizedBox(
           height: height,
           child: ListView.separated(

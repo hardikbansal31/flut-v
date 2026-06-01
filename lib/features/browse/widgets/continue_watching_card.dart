@@ -1,4 +1,4 @@
-/// A wider card with a progress bar for the "Continue Watching" row.
+﻿/// A wider card with a progress bar for the "Continue Watching" row.
 ///
 /// Shows a TMDB backdrop/poster thumbnail when available, falling back to
 /// a gradient. Includes title, time remaining label, and a slim progress
@@ -9,7 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class ContinueWatchingCard extends StatefulWidget {
   const ContinueWatchingCard({
@@ -80,7 +80,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ── Thumbnail image or gradient ──
+                // â”€â”€ Thumbnail image or gradient â”€â”€
                 if (thumbnailUrl != null)
                   Builder(
                     builder: (context) {
@@ -98,10 +98,10 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                 else
                   _GradientThumbnail(colors: colors),
 
-                // ── Darkening overlay ──
+                // â”€â”€ Darkening overlay â”€â”€
                 Container(color: Colors.black.withValues(alpha: 0.25)),
 
-                // ── Play icon centre ──
+                // â”€â”€ Play icon centre â”€â”€
                 Center(
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 200),
@@ -117,7 +117,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                         ),
                       ),
                       child: Icon(
-                        PhosphorIcons.play(PhosphorIconsStyle.fill),
+                        PhosphorIcons.playFill,
                         color: Colors.white,
                         size: 28,
                       ),
@@ -125,7 +125,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   ),
                 ),
 
-                // ── Bottom overlay: title + time remaining ──
+                // â”€â”€ Bottom overlay: title + time remaining â”€â”€
                 Positioned(
                   left: 0,
                   right: 0,
@@ -178,7 +178,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   ),
                 ),
 
-                // ── Progress bar at very bottom ──
+                // â”€â”€ Progress bar at very bottom â”€â”€
                 Positioned(
                   left: 0,
                   right: 0,
@@ -195,7 +195,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   ),
                 ),
 
-                // ── Hover border ──
+                // â”€â”€ Hover border â”€â”€
                 if (_hovering)
                   Container(
                     decoration: BoxDecoration(

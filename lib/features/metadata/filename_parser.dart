@@ -1,11 +1,11 @@
-/// Filename parser for extracting clean titles, years, and TV episode info
+﻿/// Filename parser for extracting clean titles, years, and TV episode info
 /// from media filenames.
 ///
 /// Handles common patterns like:
-///   - `Blade.Runner.2049.2017.1080p.BluRay.x264.mkv` → (title: "Blade Runner 2049", year: 2017)
-///   - `[SubGroup] Attack on Titan S04E01 [1080p].mkv` → (title: "Attack on Titan", S04E01)
-///   - `The_Batman_(2022)_WEB-DL.mp4` → (title: "The Batman", year: 2022)
-///   - `[HorribleSubs] My Hero Academia - 15 [720p].mkv` → (title: "My Hero Academia", S01E15)
+///   - `Blade.Runner.2049.2017.1080p.BluRay.x264.mkv` â†’ (title: "Blade Runner 2049", year: 2017)
+///   - `[SubGroup] Attack on Titan S04E01 [1080p].mkv` â†’ (title: "Attack on Titan", S04E01)
+///   - `The_Batman_(2022)_WEB-DL.mp4` â†’ (title: "The Batman", year: 2022)
+///   - `[HorribleSubs] My Hero Academia - 15 [720p].mkv` â†’ (title: "My Hero Academia", S01E15)
 library;
 
 import 'package:flutter/foundation.dart';
@@ -37,7 +37,7 @@ class ParsedFilename {
 class FilenameParser {
   FilenameParser._();
 
-  // Matches a 4-digit year in range 1900–2099
+  // Matches a 4-digit year in range 1900â€“2099
   static final _yearPattern = RegExp(r'[\(\[\.\s_]((?:19|20)\d{2})[\)\]\.\s_$]');
 
   // Matches a year at the very end of the string
@@ -76,14 +76,14 @@ class FilenameParser {
     caseSensitive: false,
   );
 
-  // ── TV episode patterns ───────────────────────────────────────────────────
+  // â”€â”€ TV episode patterns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// Standard season/episode code: S02E01, S2E4 (case-insensitive).
   static final _sxxExxPattern = RegExp(
     r'[Ss](\d{1,2})[Ee](\d{1,2})',
   );
 
-  /// Alternative season × episode code: 2x04, 03x12.
+  /// Alternative season Ã— episode code: 2x04, 03x12.
   static final _crossPattern = RegExp(
     r'(\d{1,2})[xX](\d{2,3})',
   );
@@ -93,11 +93,11 @@ class FilenameParser {
   static ParsedFilename parse(String filename) {
     var working = filename;
 
-    // ── Step 0: Strip file extension ───────────────────────────────────────
+    // â”€â”€ Step 0: Strip file extension â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     final extPattern = RegExp(r'\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|ts)$', caseSensitive: false);
     working = working.replaceAll(extPattern, '');
 
-    // ── Step 1: Extract season/episode BEFORE any other stripping ─────────
+    // â”€â”€ Step 1: Extract season/episode BEFORE any other stripping â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     int? season;
     int? episode;
@@ -107,7 +107,7 @@ class FilenameParser {
     if (seMatch != null) {
       season = int.parse(seMatch.group(1)!);
       episode = int.parse(seMatch.group(2)!);
-      // Truncate title at the SxxExx token — everything before it is the title
+      // Truncate title at the SxxExx token â€” everything before it is the title
       working = working.substring(0, seMatch.start);
     } else {
       // Try NxNN format: 2x04, 03x12
@@ -119,7 +119,7 @@ class FilenameParser {
       }
     }
 
-    // ── Step 2: Extract year before we strip brackets ────────────────────
+    // â”€â”€ Step 2: Extract year before we strip brackets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     int? year;
 
@@ -129,11 +129,11 @@ class FilenameParser {
       year = int.parse(bracketYearMatch.group(1)!);
     }
 
-    // ── Step 3: Strip bracketed groups ───────────────────────────────────
+    // â”€â”€ Step 3: Strip bracketed groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     working = working.replaceAll(_groupBracketPattern, ' ');
 
-    // ── Step 4: Strip resolution, source, codec, filler tags ────────────
+    // â”€â”€ Step 4: Strip resolution, source, codec, filler tags â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     working = working.replaceAll(_resolutionPattern, ' ');
     working = working.replaceAll(_sourcePattern, ' ');
@@ -141,7 +141,7 @@ class FilenameParser {
     working = working.replaceAll(_fillerPattern, ' ');
     working = working.replaceAll(_ordinalPattern, ' ');
 
-    // ── Step 5: Try year extraction from cleaned string if not found ────
+    // â”€â”€ Step 5: Try year extraction from cleaned string if not found â”€â”€â”€â”€
 
     if (year == null) {
       final yearMatch = _yearPattern.firstMatch(working) ??
@@ -157,12 +157,12 @@ class FilenameParser {
       working = working.replaceAll(RegExp(r'[\(\[]?' + year.toString() + r'[\)\]]?'), ' ');
     }
 
-    // ── Step 6: Replace dots, underscores, hyphens with spaces ──────────
+    // â”€â”€ Step 6: Replace dots, underscores, hyphens with spaces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     working = working.replaceAll(RegExp(r'[._]'), ' ');
     working = working.replaceAll(RegExp(r'\s*-\s*'), ' ');
 
-    // ── Step 7: Try absolute episode number if no SxxExx was found ──────
+    // â”€â”€ Step 7: Try absolute episode number if no SxxExx was found â”€â”€â”€â”€â”€â”€
     //
     // Patterns like "Naruto - 135" or "My Hero Academia - 15".
     // We do this AFTER dot/underscore replacement so "Title - 15" is clean.
@@ -185,7 +185,7 @@ class FilenameParser {
       }
     }
 
-    // ── Step 8: Final cleanup ───────────────────────────────────────────
+    // â”€â”€ Step 8: Final cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     // Remove any remaining trailing dots, dashes, underscores, whitespace
     working = working.replaceAll(RegExp(r'[\s._-]+$'), '');

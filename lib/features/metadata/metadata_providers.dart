@@ -1,4 +1,4 @@
-/// Riverpod providers for TMDB metadata services.
+﻿/// Riverpod providers for TMDB metadata services.
 ///
 /// Manages the API key lifecycle (persisted via SharedPreferences),
 /// the TMDB client instance, and the metadata fetch orchestrator.
@@ -13,7 +13,7 @@ import 'package:flutter_video/features/metadata/tmdb_client.dart';
 
 const _tmdbApiKeyPref = 'tmdb_api_key';
 
-// ─── API Key ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ API Key â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Holds the TMDB API key. Initialized from SharedPreferences on app start.
 class TmdbApiKeyNotifier extends Notifier<String> {
@@ -37,7 +37,7 @@ class TmdbApiKeyNotifier extends Notifier<String> {
 final tmdbApiKeyProvider =
     NotifierProvider<TmdbApiKeyNotifier, String>(TmdbApiKeyNotifier.new);
 
-// ─── TMDB Client ────────────────────────────────────────────────────────────
+// â”€â”€â”€ TMDB Client â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Provides a TmdbClient instance when an API key is available.
 /// Returns null if no API key is set.
@@ -47,7 +47,7 @@ final tmdbClientProvider = Provider<TmdbClient?>((ref) {
   return TmdbClient(apiKey: apiKey);
 });
 
-// ─── Metadata Service ───────────────────────────────────────────────────────
+// â”€â”€â”€ Metadata Service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Provides the metadata orchestration service.
 /// Returns null if no TMDB client is available.
@@ -62,7 +62,7 @@ final metadataServiceProvider = Provider<MetadataService?>((ref) {
   return service;
 });
 
-// ─── Fetch Status ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Fetch Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Tracks the current state of metadata fetching for the UI.
 class MetadataFetchNotifier extends Notifier<MetadataFetchStatus> {

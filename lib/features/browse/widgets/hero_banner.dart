@@ -1,4 +1,4 @@
-/// Full-width hero banner with auto-scrolling carousel.
+﻿/// Full-width hero banner with auto-scrolling carousel.
 ///
 /// Displays a featured media item with a dramatic backdrop image (from TMDB)
 /// or gradient fallback, title, metadata chips, synopsis, and action buttons.
@@ -14,7 +14,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class HeroBanner extends StatefulWidget {
   const HeroBanner({super.key, required this.items, this.onPlay, this.onMoreInfo});
@@ -31,7 +31,7 @@ class _HeroBannerState extends State<HeroBanner> {
   late final PageController _pageController;
   Timer? _autoScrollTimer;
 
-  /// ValueNotifier for the current page index — drives only the indicator
+  /// ValueNotifier for the current page index â€” drives only the indicator
   /// row via [AnimatedBuilder], avoiding a full widget rebuild.
   late final ValueNotifier<int> _currentPage;
 
@@ -73,7 +73,7 @@ class _HeroBannerState extends State<HeroBanner> {
       height: bannerHeight,
       child: Stack(
         children: [
-          // ── Page view of backdrop gradients ──
+          // â”€â”€ Page view of backdrop gradients â”€â”€
           PageView.builder(
             controller: _pageController,
             itemCount: widget.items.length,
@@ -88,7 +88,7 @@ class _HeroBannerState extends State<HeroBanner> {
             },
           ),
 
-          // ── Page indicators (rebuilt only when _currentPage changes) ──
+          // â”€â”€ Page indicators (rebuilt only when _currentPage changes) â”€â”€
           Positioned(
             bottom: 24,
             left: 0,
@@ -123,7 +123,7 @@ class _HeroBannerState extends State<HeroBanner> {
   }
 }
 
-// ─── Individual slide ───────────────────────────────────────────────────────
+// â”€â”€â”€ Individual slide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _HeroBannerSlide extends StatelessWidget {
   const _HeroBannerSlide({required this.item, this.onPlay, this.onMoreInfo});
@@ -141,7 +141,7 @@ class _HeroBannerSlide extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ── Backdrop image or gradient ──
+        // â”€â”€ Backdrop image or gradient â”€â”€
         if (hasBackdrop) ...[
           // Real TMDB backdrop image
           CachedNetworkImage(
@@ -173,7 +173,7 @@ class _HeroBannerSlide extends StatelessWidget {
         ],
 
 
-        // ── Content overlay ──
+        // â”€â”€ Content overlay â”€â”€
         Positioned(
           left: 32,
           right: 32,
@@ -217,7 +217,7 @@ class _HeroBannerSlide extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Year • Rating row
+              // Year â€¢ Rating row
               Row(
                 children: [
                   if (item.year != null)
@@ -228,10 +228,10 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.year != null && item.rating != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('•', style: AppTextStyles.textMutedOnly),
+                      child: Text('â€¢', style: AppTextStyles.textMutedOnly),
                     ),
                   if (item.rating != null) ...[
-                    Icon(PhosphorIcons.star(PhosphorIconsStyle.fill),
+                    Icon(PhosphorIcons.starFill,
                         color: kSecondaryAccent, size: 18),
                     const SizedBox(width: 4),
                     Text(
@@ -242,7 +242,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.type == MediaType.tvShow) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('•', style: AppTextStyles.textMutedOnly),
+                      child: Text('â€¢', style: AppTextStyles.textMutedOnly),
                     ),
                     Text(
                       'TV Series',
@@ -252,7 +252,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   if (item.type == MediaType.anime) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('•', style: AppTextStyles.textMutedOnly),
+                      child: Text('â€¢', style: AppTextStyles.textMutedOnly),
                     ),
                     Text(
                       'Anime',
@@ -281,7 +281,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   // Play button
                   ElevatedButton.icon(
                     onPressed: onPlay,
-                    icon: Icon(PhosphorIcons.play(PhosphorIconsStyle.fill), size: 22),
+                    icon: Icon(PhosphorIcons.playFill, size: 22),
                     label: const Text('Play'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kAccentColor,
@@ -298,7 +298,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   // More info button
                   OutlinedButton.icon(
                     onPressed: onMoreInfo,
-                    icon: Icon(PhosphorIcons.info(), size: 20),
+                    icon: Icon(PhosphorIcons.info, size: 20),
                     label: const Text('More Info'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white70,

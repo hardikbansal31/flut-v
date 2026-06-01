@@ -1,4 +1,4 @@
-/// App-wide dark theme definition.
+﻿/// App-wide dark theme definition.
 ///
 /// Defines color palette, text styles, and component themes for the
 /// Netflix-style media player UI. Uses Google Fonts "Inter" for clean,
@@ -8,7 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ─── Color palette ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Color palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /// Deep background used for scaffold & main surfaces.
 const Color kBackgroundColor = Color(0xFF0A0A0F);
@@ -19,16 +19,16 @@ const Color kSurfaceColor = Color(0xFF13131A);
 /// Card overlay / elevated surface.
 const Color kCardColor = Color(0xFF13131A);
 
-/// Primary accent — vibrant indigo-violet.
+/// Primary accent â€” vibrant indigo-violet.
 const Color kAccentColor = Color(0xFFE8556D);
 
-/// Secondary accent — warm amber for ratings, highlights.
+/// Secondary accent â€” warm amber for ratings, highlights.
 const Color kSecondaryAccent = Color(0xFFFFAB40);
 
 /// Progress-bar track (dimmed).
 const Color kProgressTrack = Color(0xFF2A2A3E);
 
-/// Progress-bar fill — cyan-teal.
+/// Progress-bar fill â€” cyan-teal.
 const Color kProgressFill = Color(0xFF00E5FF);
 
 /// Muted text / secondary labels.
@@ -37,7 +37,7 @@ const Color kMutedText = Color(0xFF8E8E9A);
 /// Subtle border / divider.
 const Color kDivider = Color(0xFF222233);
 
-// ─── Semantic Theme Definitions ───────────────────────────────────────────────
+// â”€â”€â”€ Semantic Theme Definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class AppTheme {
   static const Color mutedText = kMutedText;
@@ -94,7 +94,7 @@ class AppTextStyles {
   static final TextStyle navItem = GoogleFonts.inter(fontSize: 14);
 }
 
-// ─── Theme builder ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Theme builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 ThemeData buildAppTheme() {
   final textTheme = GoogleFonts.interTextTheme(

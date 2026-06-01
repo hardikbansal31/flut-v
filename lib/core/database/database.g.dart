@@ -1,4 +1,4 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+﻿// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'database.dart';
 
@@ -910,7 +910,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
   /// Release year extracted from TMDB release_date / first_air_date.
   final int? releaseYear;
 
-  /// TMDB vote average (0.0–10.0).
+  /// TMDB vote average (0.0â€“10.0).
   final double? voteAverage;
 
   /// Comma-separated genre names (e.g. "Action,Sci-Fi,Drama").

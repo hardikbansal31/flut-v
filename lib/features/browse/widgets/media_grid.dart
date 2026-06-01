@@ -1,8 +1,8 @@
-/// A labelled grid section that displays media cards in a responsive sliver grid.
+﻿/// A labelled grid section that displays media cards in a responsive sliver grid.
 ///
 /// Used for the "Movies", "TV Shows", "Anime", and "Uncategorized" sections
 /// of the home screen.  Returns a list of slivers suitable for use inside a
-/// [CustomScrollView], which enables true lazy-loading of grid children —
+/// [CustomScrollView], which enables true lazy-loading of grid children â€”
 /// only cards currently visible in the viewport are built and laid out.
 library;
 
@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/browse/widgets/media_card.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class MediaGrid extends StatelessWidget {
   const MediaGrid({
@@ -39,7 +39,7 @@ class MediaGrid extends StatelessWidget {
   /// include the section header and the responsive grid itself.
   List<Widget> buildSlivers(BuildContext context) {
     return [
-      // ── Section header ──
+      // â”€â”€ Section header â”€â”€
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverToBoxAdapter(
@@ -58,7 +58,7 @@ class MediaGrid extends StatelessWidget {
                         style: AppTextStyles.seeAll,
                       ),
                       SizedBox(width: 4),
-                      Icon(PhosphorIcons.caretRight(),
+                      Icon(PhosphorIcons.caretRight,
                           size: 12, color: kAccentColor),
                     ],
                   ),
@@ -70,7 +70,7 @@ class MediaGrid extends StatelessWidget {
 
       const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
-      // ── Responsive sliver grid ──
+      // â”€â”€ Responsive sliver grid â”€â”€
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverLayoutBuilder(
@@ -115,7 +115,7 @@ class MediaGrid extends StatelessWidget {
     ];
   }
 
-  /// Fallback [build] — kept so the widget can still be instantiated
+  /// Fallback [build] â€” kept so the widget can still be instantiated
   /// as a regular widget in tests or simple layouts.  Prefer [buildSlivers]
   /// for use inside a [CustomScrollView].
   @override

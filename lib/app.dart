@@ -1,4 +1,4 @@
-/// Root MaterialApp configuration.
+﻿/// Root MaterialApp configuration.
 ///
 /// Sets up the dark theme, removes the debug banner, and routes to
 /// the home screen.

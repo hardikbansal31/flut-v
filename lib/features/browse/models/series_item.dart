@@ -1,4 +1,4 @@
-/// Grouped TV series data model.
+﻿/// Grouped TV series data model.
 ///
 /// Represents a single TV series composed of multiple episode [MediaFile]
 /// rows from the database. Used by the home screen to display one card
@@ -12,7 +12,7 @@ import 'package:flutter_video/features/browse/models/media_item.dart';
 
 /// A grouped TV series with all its episode files.
 class SeriesItem {
-  /// Grouping key — TMDB series ID (as string) or fallback title.
+  /// Grouping key â€” TMDB series ID (as string) or fallback title.
   final String groupKey;
 
   /// Clean series title (e.g. "Attack on Titan").
@@ -58,7 +58,7 @@ class SeriesItem {
   /// The total number of episodes in this series.
   int get episodeCount => episodes.length;
 
-  // ── Season/episode extraction from tmdbTitle ────────────────────────────
+  // â”€â”€ Season/episode extraction from tmdbTitle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// Regular expression to extract season and episode from the stored
   /// tmdbTitle format: "Series Name - S02E04 - Episode Name"
@@ -126,7 +126,7 @@ class SeriesItem {
     return FilenameParser.parse(file.fileName).cleanTitle;
   }
 
-  // ── Grouping ──────────────────────────────────────────────────────────
+  // â”€â”€ Grouping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// Groups a list of TV/anime [MediaFile]s into [SeriesItem] objects.
   ///

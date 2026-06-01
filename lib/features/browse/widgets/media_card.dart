@@ -1,4 +1,4 @@
-/// A standard poster-style media card.
+﻿/// A standard poster-style media card.
 ///
 /// Shows a TMDB poster image when available, falling back to a gradient
 /// placeholder. Includes hover / focus elevation animation for desktop UIs.
@@ -8,7 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class MediaCard extends StatelessWidget {
   const MediaCard({
@@ -35,7 +35,7 @@ class MediaCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Poster image or gradient fallback ──
+            // â”€â”€ Poster image or gradient fallback â”€â”€
             AspectRatio(
               aspectRatio: 2 / 3,
               child: ClipRRect(
@@ -63,7 +63,7 @@ class MediaCard extends StatelessWidget {
                 ),
               ),
 
-              // ── Bottom info ──
+              // â”€â”€ Bottom info â”€â”€
               const SizedBox(height: 8),
               Text(
                 item.title,
@@ -82,7 +82,7 @@ class MediaCard extends StatelessWidget {
                   if (item.year != null && item.rating != null)
                     const SizedBox(width: 6),
                   if (item.rating != null) ...[
-                    Icon(PhosphorIcons.star(PhosphorIconsStyle.fill),
+                    Icon(PhosphorIcons.starFill,
                         size: 12, color: kSecondaryAccent),
                     const SizedBox(width: 2),
                     Text(
@@ -157,7 +157,7 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
                     color: Colors.black.withValues(alpha: 0.3),
                     child: Center(
                       child: Icon(
-                        PhosphorIcons.playCircle(PhosphorIconsStyle.fill),
+                        PhosphorIcons.playCircleFill,
                         size: 48,
                         color: Colors.white,
                       ),
@@ -200,10 +200,10 @@ class _GradientPlaceholder extends StatelessWidget {
         Center(
           child: Icon(
             type == MediaType.tvShow
-                ? PhosphorIcons.television()
+                ? PhosphorIcons.television
                 : type == MediaType.anime
-                    ? PhosphorIcons.filmStrip()
-                    : PhosphorIcons.filmSlate(),
+                    ? PhosphorIcons.filmStrip
+                    : PhosphorIcons.filmSlate,
             size: 40,
             color: Colors.white.withValues(alpha: 0.15),
           ),

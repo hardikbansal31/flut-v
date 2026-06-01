@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
@@ -6,7 +6,7 @@ import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/features/browse/screens/media_detail_screen.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:flutter_video/features/browse/widgets/media_grid.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class CategoryScreen extends ConsumerWidget {
   final String title;
@@ -66,7 +66,7 @@ class CategoryScreen extends ConsumerWidget {
         backgroundColor: kBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(PhosphorIcons.caretLeft(), size: 20),
+          icon: Icon(PhosphorIcons.caretLeft, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),

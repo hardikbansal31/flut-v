@@ -1,4 +1,4 @@
-/// Series detail page showing all episodes grouped by season.
+﻿/// Series detail page showing all episodes grouped by season.
 ///
 /// Displays a backdrop banner, series info (title, year, rating, genres,
 /// description), and episodes organised under "Season N" headers.
@@ -17,7 +17,7 @@ import 'package:flutter_video/features/metadata/tmdb_client.dart' as tmdb;
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class MediaDetailScreen extends ConsumerWidget {
   const MediaDetailScreen({super.key, this.series, this.mediaFile})
@@ -55,17 +55,17 @@ class MediaDetailScreen extends ConsumerWidget {
       backgroundColor: kBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // ── Backdrop banner with back button ──────────────────────────
+          // â”€â”€ Backdrop banner with back button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           SliverToBoxAdapter(
             child: _BackdropBanner(item: item),
           ),
 
-          // ── Media info section ──────────────────────────────────────
+          // â”€â”€ Media info section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           SliverToBoxAdapter(
             child: _MediaInfoSection(item: item, series: currentSeries),
           ),
 
-          // ── Content section ───────────────────────────────────────────
+          // â”€â”€ Content section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (isSeries)
             ...currentSeries.seasons.map((season) {
               return SliverMainAxisGroup(
@@ -141,7 +141,7 @@ class MediaDetailScreen extends ConsumerWidget {
                             ),
                           );
                         },
-                        icon: Icon(PhosphorIcons.play(PhosphorIconsStyle.fill), size: 28),
+                        icon: Icon(PhosphorIcons.playFill, size: 28),
                         label: const Text('Play'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kAccentColor,
@@ -171,7 +171,7 @@ class MediaDetailScreen extends ConsumerWidget {
                               await db.markAsWatched([currentMediaFile!.id]);
                             }
                           },
-                          icon: Icon(isFullyWatched ? PhosphorIcons.minusCircle() : PhosphorIcons.checks(), size: 28),
+                          icon: Icon(isFullyWatched ? PhosphorIcons.minusCircle : PhosphorIcons.checks, size: 28),
                           label: Text(isFullyWatched ? 'Unwatched' : 'Watched'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isFullyWatched ? kSurfaceColor : kCardColor,
@@ -199,7 +199,7 @@ class MediaDetailScreen extends ConsumerWidget {
   }
 }
 
-// ─── Backdrop Banner ────────────────────────────────────────────────────────
+// â”€â”€â”€ Backdrop Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _BackdropBanner extends StatelessWidget {
   const _BackdropBanner({required this.item});
@@ -214,7 +214,7 @@ class _BackdropBanner extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Background image ──
+          // â”€â”€ Background image â”€â”€
           if (item.backdropUrl != null)
             CachedNetworkImage(
               imageUrl: item.backdropUrl!,
@@ -235,7 +235,7 @@ class _BackdropBanner extends StatelessWidget {
           else
             Container(color: kSurfaceColor),
 
-          // ── Gradient overlays ──
+          // â”€â”€ Gradient overlays â”€â”€
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -252,7 +252,7 @@ class _BackdropBanner extends StatelessWidget {
             ),
           ),
 
-          // ── Back button ──
+          // â”€â”€ Back button â”€â”€
           Positioned(
             top: MediaQuery.paddingOf(context).top + 8,
             left: 8,
@@ -264,7 +264,7 @@ class _BackdropBanner extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  PhosphorIcons.arrowLeft(),
+                  PhosphorIcons.arrowLeft,
                   color: Colors.white,
                   size: 22,
                 ),
@@ -278,7 +278,7 @@ class _BackdropBanner extends StatelessWidget {
   }
 }
 
-// ─── Series Info ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Series Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _MediaInfoSection extends StatelessWidget {
   const _MediaInfoSection({required this.item, this.series});
@@ -292,7 +292,7 @@ class _MediaInfoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Title ──
+          // â”€â”€ Title â”€â”€
           Text(
             item.title,
             style: AppTextStyles.seriesTitle,
@@ -300,7 +300,7 @@ class _MediaInfoSection extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // ── Metadata row: year · rating · episode count / duration ──
+          // â”€â”€ Metadata row: year Â· rating Â· episode count / duration â”€â”€
           Wrap(
             spacing: 12,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -314,7 +314,7 @@ class _MediaInfoSection extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(PhosphorIcons.star(PhosphorIconsStyle.fill),
+                    Icon(PhosphorIcons.starFill,
                         size: 16, color: kSecondaryAccent),
                     const SizedBox(width: 4),
                     Text(
@@ -340,7 +340,7 @@ class _MediaInfoSection extends StatelessWidget {
             ],
           ),
 
-          // ── Genres ──
+          // â”€â”€ Genres â”€â”€
           if (item.genres.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -368,7 +368,7 @@ class _MediaInfoSection extends StatelessWidget {
             ),
           ],
 
-          // ── Overview ──
+          // â”€â”€ Overview â”€â”€
           if (item.overview != null &&
               item.overview!.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -385,7 +385,7 @@ class _MediaInfoSection extends StatelessWidget {
   }
 }
 
-// ─── Episode Tile ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Episode Tile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _EpisodeTile extends StatefulWidget {
   const _EpisodeTile({required this.file, this.onTap, this.onMarkWatched, this.onMarkUnwatched});
@@ -445,7 +445,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
           ),
           child: Row(
             children: [
-              // ── Episode still image ──
+              // â”€â”€ Episode still image â”€â”€
               ClipRRect(
                 borderRadius:
                     const BorderRadius.horizontal(left: Radius.circular(8)),
@@ -470,7 +470,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                         Container(
                           color: kCardColor,
                           child: Center(
-                            child: Icon(PhosphorIcons.filmSlate(),
+                            child: Icon(PhosphorIcons.filmSlate,
                                 color: kMutedText, size: 28),
                           ),
                         ),
@@ -480,7 +480,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                         Container(
                           color: Colors.black.withValues(alpha: 0.4),
                           child: Center(
-                            child: Icon(PhosphorIcons.playCircle(PhosphorIconsStyle.fill),
+                            child: Icon(PhosphorIcons.playCircleFill,
                                 size: 36, color: Colors.white),
                           ),
                         ),
@@ -507,7 +507,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                 ),
               ),
 
-              // ── Episode info ──
+              // â”€â”€ Episode info â”€â”€
               Expanded(
                 child: Padding(
                   padding:
@@ -569,11 +569,11 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                 ),
               ),
 
-              // ── Watched Toggle ──
+              // â”€â”€ Watched Toggle â”€â”€
               if (_hovering || isFullyWatched)
                 IconButton(
                   icon: Icon(
-                    isFullyWatched ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill) : PhosphorIcons.checkCircle(),
+                    isFullyWatched ? PhosphorIcons.checkCircleFill : PhosphorIcons.checkCircle,
                   ),
                   color: isFullyWatched ? kSecondaryAccent : kMutedText.withValues(alpha: 0.5),
                   onPressed: isFullyWatched ? widget.onMarkUnwatched : widget.onMarkWatched,
@@ -582,11 +582,11 @@ class _EpisodeTileState extends State<_EpisodeTile> {
               else
                 const SizedBox(width: 48),
 
-              // ── Chevron ──
+              // â”€â”€ Chevron â”€â”€
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Icon(
-                  PhosphorIcons.play(PhosphorIconsStyle.fill),
+                  PhosphorIcons.playFill,
                   color: _hovering
                       ? Colors.white
                       : kMutedText.withValues(alpha: 0.5),
