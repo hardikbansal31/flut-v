@@ -148,7 +148,9 @@ class MediaItem {
       title: series.seriesTitle,
       posterGradientColors: [color1, color2],
       posterUrl: series.posterUrl,
-      backdropUrl: series.backdropUrl,
+      backdropUrl: (currentEpisode != null && currentEpisode.backdropPath != null)
+          ? tmdb.backdropUrl(currentEpisode.backdropPath)
+          : series.backdropUrl,
       year: series.year,
       rating: series.rating,
       overview: series.overview,

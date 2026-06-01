@@ -15,8 +15,10 @@ import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/features/metadata/tmdb_client.dart' as tmdb;
 import 'package:flutter_video/features/player/screens/player_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_video/features/library/library_providers.dart';
 
-class MediaDetailScreen extends StatelessWidget {
+class MediaDetailScreen extends ConsumerWidget {
   const MediaDetailScreen({super.key, this.series, this.mediaFile})
       : assert(series != null || mediaFile != null);
 
@@ -24,11 +26,29 @@ class MediaDetailScreen extends StatelessWidget {
   final MediaFile? mediaFile;
 
   @override
-  Widget build(BuildContext context) {
-    final isSeries = series != null;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allFiles = ref.watch(allMediaFilesProvider).value ?? [];
+    final allSeries = ref.watch(groupedSeriesProvider);
+
+    SeriesItem? currentSeries;
+    MediaFile? currentMediaFile;
+
+    if (series != null) {
+      currentSeries = allSeries.cast<SeriesItem?>().firstWhere(
+        (s) => s?.groupKey == series!.groupKey, 
+        orElse: () => series
+      );
+    } else if (mediaFile != null) {
+      currentMediaFile = allFiles.cast<MediaFile?>().firstWhere(
+        (f) => f?.id == mediaFile!.id, 
+        orElse: () => mediaFile
+      );
+    }
+
+    final isSeries = currentSeries != null;
     final item = isSeries
-        ? MediaItem.fromSeriesItem(series!)
-        : MediaItem.fromMediaFile(mediaFile!);
+        ? MediaItem.fromSeriesItem(currentSeries!)
+        : MediaItem.fromMediaFile(currentMediaFile!);
 
     return Scaffold(
       backgroundColor: kBackgroundColor,
@@ -41,12 +61,12 @@ class MediaDetailScreen extends StatelessWidget {
 
           // ── Media info section ──────────────────────────────────────
           SliverToBoxAdapter(
-            child: _MediaInfoSection(item: item, series: series),
+            child: _MediaInfoSection(item: item, series: currentSeries),
           ),
 
           // ── Content section ───────────────────────────────────────────
           if (isSeries)
-            ...series!.seasons.map((season) {
+            ...currentSeries!.seasons.map((season) {
               return SliverMainAxisGroup(
                 slivers: [
                   // Season header
@@ -65,7 +85,7 @@ class MediaDetailScreen extends StatelessWidget {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final episodes = series!.episodesForSeason(season);
+                          final episodes = currentSeries!.episodesForSeason(season);
                           final episode = episodes[index];
                           return _EpisodeTile(
                             file: episode,
@@ -77,9 +97,27 @@ class MediaDetailScreen extends StatelessWidget {
                                 ),
                               );
                             },
+                            onMarkWatched: () async {
+                              final db = ref.read(databaseProvider);
+                              final allEpisodes = currentSeries!.episodes;
+                              final index = allEpisodes.indexWhere((e) => e.id == episode.id);
+                              if (index != -1) {
+                                final ids = allEpisodes.sublist(0, index + 1).map((e) => e.id).toList();
+                                await db.markAsWatched(ids);
+                              }
+                            },
+                            onMarkUnwatched: () async {
+                              final db = ref.read(databaseProvider);
+                              final allEpisodes = currentSeries!.episodes;
+                              final index = allEpisodes.indexWhere((e) => e.id == episode.id);
+                              if (index != -1) {
+                                final ids = allEpisodes.sublist(index).map((e) => e.id).toList();
+                                await db.markAsUnwatched(ids);
+                              }
+                            },
                           );
                         },
-                        childCount: series!.episodesForSeason(season).length,
+                        childCount: currentSeries!.episodesForSeason(season).length,
                       ),
                     ),
                   ),
@@ -90,26 +128,64 @@ class MediaDetailScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PlayerScreen(mediaFile: mediaFile!),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PlayerScreen(mediaFile: currentMediaFile!),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                        label: const Text('Play'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kAccentColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: AppTextStyles.buttonText.copyWith(fontSize: 18),
+                        ),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                  label: const Text('Play'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kAccentColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    textStyle: AppTextStyles.buttonText.copyWith(fontSize: 18),
-                  ),
+                    const SizedBox(width: 16),
+                    Builder(
+                      builder: (context) {
+                        final duration = currentMediaFile!.durationMillis ?? 0;
+                        final position = currentMediaFile!.positionMillis ?? 0;
+                        final progress = duration > 0 ? (position / duration).clamp(0.0, 1.0) : 0.0;
+                        final isFullyWatched = progress >= 0.95;
+                        
+                        return ElevatedButton.icon(
+                          onPressed: () async {
+                            final db = ref.read(databaseProvider);
+                            if (isFullyWatched) {
+                              await db.markAsUnwatched([currentMediaFile!.id]);
+                            } else {
+                              await db.markAsWatched([currentMediaFile!.id]);
+                            }
+                          },
+                          icon: Icon(isFullyWatched ? Icons.remove_done_rounded : Icons.done_all_rounded, size: 28),
+                          label: Text(isFullyWatched ? 'Unwatched' : 'Watched'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isFullyWatched ? kSurfaceColor : kCardColor,
+                            foregroundColor: isFullyWatched ? kMutedText : Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: isFullyWatched ? kDivider : Colors.transparent),
+                            ),
+                            textStyle: AppTextStyles.buttonText.copyWith(fontSize: 16),
+                          ),
+                        );
+                      }
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -311,9 +387,11 @@ class _MediaInfoSection extends StatelessWidget {
 // ─── Episode Tile ───────────────────────────────────────────────────────────
 
 class _EpisodeTile extends StatefulWidget {
-  const _EpisodeTile({required this.file, this.onTap});
+  const _EpisodeTile({required this.file, this.onTap, this.onMarkWatched, this.onMarkUnwatched});
   final MediaFile file;
   final VoidCallback? onTap;
+  final VoidCallback? onMarkWatched;
+  final VoidCallback? onMarkUnwatched;
 
   @override
   State<_EpisodeTile> createState() => _EpisodeTileState();
@@ -335,6 +413,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
     final position = file.positionMillis ?? 0;
     final progress = duration > 0 ? (position / duration).clamp(0.0, 1.0) : 0.0;
     final hasProgress = position > 0 && progress > 0.01 && progress < 0.95;
+    final isFullyWatched = progress >= 0.95;
 
     // Duration display
     final durationMin = duration > 0 ? (duration / 60000).round() : 0;
@@ -488,6 +567,19 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                   ),
                 ),
               ),
+
+              // ── Watched Toggle ──
+              if (_hovering || isFullyWatched)
+                IconButton(
+                  icon: Icon(
+                    isFullyWatched ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
+                  ),
+                  color: isFullyWatched ? kSecondaryAccent : kMutedText.withValues(alpha: 0.5),
+                  onPressed: isFullyWatched ? widget.onMarkUnwatched : widget.onMarkWatched,
+                  tooltip: isFullyWatched ? 'Mark as unwatched' : 'Mark as watched',
+                )
+              else
+                const SizedBox(width: 48),
 
               // ── Chevron ──
               Padding(

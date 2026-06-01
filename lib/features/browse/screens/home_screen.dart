@@ -33,6 +33,7 @@ import 'package:flutter_video/features/browse/widgets/continue_watching_card.dar
 import 'package:flutter_video/features/browse/widgets/hero_banner.dart';
 import 'package:flutter_video/features/browse/widgets/horizontal_media_row.dart';
 import 'package:flutter_video/features/browse/widgets/media_grid.dart';
+import 'package:flutter_video/features/browse/screens/category_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -286,23 +287,8 @@ class _ContinueWatchingSection extends ConsumerWidget {
         final entry = entries[index];
         final item = items[index];
 
-        // For series: show series title with episode label
-        final displayItem = item.episodeLabel != null
-            ? MediaItem(
-                id: item.id,
-                title: '${item.title} · ${item.episodeLabel}',
-                posterGradientColors: item.posterGradientColors,
-                posterUrl: item.posterUrl,
-                backdropUrl: item.backdropUrl,
-                year: item.year,
-                rating: item.rating,
-                overview: item.overview,
-                genres: item.genres,
-                type: item.type,
-                durationMinutes: item.durationMinutes,
-                watchedMinutes: item.watchedMinutes,
-              )
-            : item;
+        // For series: the item already contains episodeLabel from MediaItem.fromSeriesItem
+        final displayItem = item;
 
         return ContinueWatchingCard(
           item: displayItem,
@@ -368,7 +354,7 @@ class _RecentlyAddedSection extends ConsumerWidget {
         ...MediaGrid(
           title: 'Recently Added',
           items: displayItems.map((e) => e.mediaItem).toList(),
-          onSeeAll: () {},
+          onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Recently Added'))),
           onItemTap: (index) {
             final item = displayItems[index];
             Navigator.push(
@@ -467,7 +453,7 @@ class _CategoryGridsSliverSectionState
       slivers.addAll(MediaGrid(
         title: 'Movies',
         items: movieItems,
-        onSeeAll: () {},
+        onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Movies'))),
         onItemTap: (index) =>
             _navigateToPlayer(context, movieItems[index]),
       ).buildSlivers(context));
@@ -478,7 +464,7 @@ class _CategoryGridsSliverSectionState
       slivers.addAll(MediaGrid(
         title: 'TV Shows',
         items: tvItems,
-        onSeeAll: () {},
+        onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'TV Shows'))),
         onItemTap: (index) =>
             _navigateToMediaDetail(context, series: tvSeries[index]),
       ).buildSlivers(context));
@@ -489,7 +475,7 @@ class _CategoryGridsSliverSectionState
       slivers.addAll(MediaGrid(
         title: 'Anime',
         items: animeItems,
-        onSeeAll: () {},
+        onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Anime'))),
         onItemTap: (index) =>
             _navigateToMediaDetail(context, series: animeSeries[index]),
       ).buildSlivers(context));
@@ -500,7 +486,7 @@ class _CategoryGridsSliverSectionState
       slivers.addAll(MediaGrid(
         title: 'Uncategorized',
         items: uncategorizedItems,
-        onSeeAll: () {},
+        onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Uncategorized'))),
         onItemTap: (index) {
           final file = files.firstWhere((f) => f.id.toString() == uncategorizedItems[index].id);
           _navigateToMediaDetail(context, mediaFile: file);
@@ -766,9 +752,22 @@ class _FadingAppBarState extends State<_FadingAppBar> {
               ],
               const Spacer(),
               _NavItem(label: 'Home', isActive: true),
-              _NavItem(label: 'Movies'),
-              _NavItem(label: 'TV Shows'),
-              _NavItem(label: 'Library'),
+              _NavItem(
+                label: 'Movies',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Movies'))),
+              ),
+              _NavItem(
+                label: 'TV Shows',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'TV Shows'))),
+              ),
+              _NavItem(
+                label: 'Anime',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Anime'))),
+              ),
+              _NavItem(
+                label: 'Library',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Library'))),
+              ),
               const SizedBox(width: 16),
               IconButton(
                 icon: const Icon(Icons.search_rounded),
@@ -805,9 +804,11 @@ class _FadingAppBarState extends State<_FadingAppBar> {
 // ─── Small nav-bar item ─────────────────────────────────────────────────────
 
 class _NavItem extends StatefulWidget {
-  const _NavItem({required this.label, this.isActive = false});
+  const _NavItem({required this.label, this.isActive = false, this.onTap});
+
   final String label;
   final bool isActive;
+  final VoidCallback? onTap;
 
   @override
   State<_NavItem> createState() => _NavItemState();
@@ -822,7 +823,7 @@ class _NavItemState extends State<_NavItem> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(
-        onTap: () {},
+        onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: AnimatedDefaultTextStyle(

@@ -140,11 +140,27 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          item.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.continueWatchingTitle,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.continueWatchingTitle,
+                              ),
+                            ),
+                            if (item.episodeLabel != null) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                item.episodeLabel!,
+                                style: AppTextStyles.continueWatchingTitle.copyWith(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(

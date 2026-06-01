@@ -91,6 +91,10 @@ class FilenameParser {
   static ParsedFilename parse(String filename) {
     var working = filename;
 
+    // ── Step 0: Strip file extension ───────────────────────────────────────
+    final extPattern = RegExp(r'\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|ts)$', caseSensitive: false);
+    working = working.replaceAll(extPattern, '');
+
     // ── Step 1: Extract season/episode BEFORE any other stripping ─────────
 
     int? season;

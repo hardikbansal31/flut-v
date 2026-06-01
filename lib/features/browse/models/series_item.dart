@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter_video/core/database/database.dart';
+import 'package:flutter_video/features/metadata/filename_parser.dart';
 import 'package:flutter_video/features/metadata/tmdb_client.dart' as tmdb;
 import 'package:flutter_video/features/browse/models/media_item.dart';
 
@@ -65,29 +66,44 @@ class SeriesItem {
 
   /// Extract the episode label (e.g. "S02E04") from a media file's tmdbTitle.
   static String? episodeLabelFor(MediaFile file) {
-    final title = file.tmdbTitle;
-    if (title == null) return null;
-    final match = _seCodePattern.firstMatch(title);
-    if (match == null) return null;
-    final s = int.parse(match.group(1)!).toString().padLeft(2, '0');
-    final e = int.parse(match.group(2)!).toString().padLeft(2, '0');
-    return 'S${s}E$e';
+    if (file.tmdbTitle != null) {
+      final match = _seCodePattern.firstMatch(file.tmdbTitle!);
+      if (match != null) {
+        final s = int.parse(match.group(1)!).toString().padLeft(2, '0');
+        final e = int.parse(match.group(2)!).toString().padLeft(2, '0');
+        return 'S${s}E$e';
+      }
+    }
+    // Fallback: parse filename for anime/uncategorized without strict tags
+    final parsed = FilenameParser.parse(file.fileName);
+    if (parsed.season != null && parsed.episode != null) {
+      final s = parsed.season!.toString().padLeft(2, '0');
+      final e = parsed.episode!.toString().padLeft(2, '0');
+      return 'S${s}E$e';
+    }
+    return null;
   }
 
   /// Extract the season number from a media file's tmdbTitle.
   static int seasonFor(MediaFile file) {
-    final title = file.tmdbTitle;
-    if (title == null) return 1;
-    final match = _seCodePattern.firstMatch(title);
-    return match != null ? int.parse(match.group(1)!) : 1;
+    if (file.tmdbTitle != null) {
+      final match = _seCodePattern.firstMatch(file.tmdbTitle!);
+      if (match != null) return int.parse(match.group(1)!);
+    }
+    // Fallback
+    final parsed = FilenameParser.parse(file.fileName);
+    return parsed.season ?? 1;
   }
 
   /// Extract the episode number from a media file's tmdbTitle.
   static int episodeNumberFor(MediaFile file) {
-    final title = file.tmdbTitle;
-    if (title == null) return 0;
-    final match = _seCodePattern.firstMatch(title);
-    return match != null ? int.parse(match.group(2)!) : 0;
+    if (file.tmdbTitle != null) {
+      final match = _seCodePattern.firstMatch(file.tmdbTitle!);
+      if (match != null) return int.parse(match.group(2)!);
+    }
+    // Fallback
+    final parsed = FilenameParser.parse(file.fileName);
+    return parsed.episode ?? 0;
   }
 
   /// Extract the episode name (after "S02E04 - ") from tmdbTitle.
@@ -101,10 +117,13 @@ class SeriesItem {
 
   /// Extract the clean series title (before " - S02E04") from tmdbTitle.
   static String seriesTitleFor(MediaFile file) {
-    final title = file.tmdbTitle ?? file.fileName;
-    // Strip " - S02E04..." suffix
-    final match = RegExp(r'^(.+?)\s*-\s*S\d+E\d+').firstMatch(title);
-    return match?.group(1)?.trim() ?? title;
+    if (file.tmdbTitle != null) {
+      final match = RegExp(r'^(.+?)\s*-\s*S\d+E\d+').firstMatch(file.tmdbTitle!);
+      if (match != null) return match.group(1)!.trim();
+      return file.tmdbTitle!;
+    }
+    // Fallback: use robust FilenameParser
+    return FilenameParser.parse(file.fileName).cleanTitle;
   }
 
   // ── Grouping ──────────────────────────────────────────────────────────

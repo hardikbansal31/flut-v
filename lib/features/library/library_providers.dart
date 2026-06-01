@@ -81,20 +81,14 @@ final recentlyAddedFilesProvider = StreamProvider<List<MediaFile>>((ref) {
 ///
 /// For TV/anime files: groups by series (via tmdbId or title) and keeps only
 /// the most recently watched episode per series (determined by [lastWatchedAt]).
-/// For movies: passes through unchanged.
+/// If the most recently watched episode is fully completed, it will suggest the
+/// next unwatched episode in the series, if available.
+/// For movies: passes through unchanged if partially watched.
 ///
 /// Returns a record of (MediaFile file, SeriesItem? series) pairs so the UI
 /// can build the right card and navigate to the right destination.
 final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
   final allFiles = ref.watch(allMediaFilesProvider).value ?? [];
-
-  // Filter for in-progress files
-  final inProgress = allFiles.where((file) {
-    if (file.positionMillis == null || file.durationMillis == null) return false;
-    if (file.durationMillis == 0) return false;
-    final progress = file.positionMillis! / file.durationMillis!;
-    return progress > 0.01 && progress < 0.95;
-  }).toList();
 
   final result = <ContinueWatchingEntry>[];
 
@@ -102,7 +96,7 @@ final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
   final movies = <MediaFile>[];
   final tvFiles = <MediaFile>[];
 
-  for (final file in inProgress) {
+  for (final file in allFiles) {
     final type = file.mediaType;
     if (type == 'tv' || type == 'anime') {
       tvFiles.add(file);
@@ -111,44 +105,86 @@ final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
     }
   }
 
-  // Movies pass through as individual entries
+  // Movies: Only include if partially watched
   for (final movie in movies) {
-    result.add(ContinueWatchingEntry(file: movie));
-  }
-
-  // Group TV/anime by series
-  if (tvFiles.isNotEmpty) {
-    final seriesList = SeriesItem.groupFiles(tvFiles);
-    for (final series in seriesList) {
-      // Pick the most recently watched episode by lastWatchedAt,
-      // with positionMillis as fallback for pre-migration data
-      final episodes = series.episodes.toList();
-      episodes.sort((a, b) {
-        final aTime = a.lastWatchedAt;
-        final bTime = b.lastWatchedAt;
-        if (aTime != null && bTime != null) {
-          return bTime.compareTo(aTime); // Most recent first
-        }
-        if (aTime != null) return -1;
-        if (bTime != null) return 1;
-        // Fallback: higher positionMillis = more recently interacted
-        return (b.positionMillis ?? 0).compareTo(a.positionMillis ?? 0);
-      });
-      final mostRecent = episodes.first;
-      result.add(ContinueWatchingEntry(file: mostRecent, series: series));
+    if (movie.positionMillis == null || movie.durationMillis == null || movie.durationMillis == 0) continue;
+    final progress = movie.positionMillis! / movie.durationMillis!;
+    if (progress > 0.01 && progress < 0.95) {
+      result.add(ContinueWatchingEntry(file: movie));
     }
   }
 
-  // Sort all entries by lastWatchedAt descending (most recent first)
+  // TV/Anime: Group by series
+  if (tvFiles.isNotEmpty) {
+    final seriesList = SeriesItem.groupFiles(tvFiles);
+    for (final series in seriesList) {
+      // Find episodes with some watch history
+      final watchedEpisodes = series.episodes.where((e) {
+        if (e.lastWatchedAt != null) return true;
+        if (e.positionMillis != null && e.positionMillis! > 0) return true;
+        return false;
+      }).toList();
+
+      if (watchedEpisodes.isEmpty) continue;
+
+      // Sort by most recently interacted
+      watchedEpisodes.sort((a, b) {
+        final aTime = a.lastWatchedAt;
+        final bTime = b.lastWatchedAt;
+        if (aTime != null && bTime != null) {
+          final cmp = bTime.compareTo(aTime);
+          if (cmp != 0) return cmp;
+          // Tie-breaker: Episode order (highest index first)
+          final aIndex = series.episodes.indexWhere((e) => e.id == a.id);
+          final bIndex = series.episodes.indexWhere((e) => e.id == b.id);
+          return bIndex.compareTo(aIndex);
+        }
+        if (aTime != null) return -1;
+        if (bTime != null) return 1;
+        return (b.positionMillis ?? 0).compareTo(a.positionMillis ?? 0);
+      });
+
+      final mostRecent = watchedEpisodes.first;
+
+      bool isFullyWatched(MediaFile file) {
+        if (file.positionMillis == null || file.durationMillis == null || file.durationMillis == 0) return false;
+        return (file.positionMillis! / file.durationMillis!) >= 0.95;
+      }
+
+      if (!isFullyWatched(mostRecent)) {
+        // If partially watched or barely watched, continue from here
+        result.add(ContinueWatchingEntry(file: mostRecent, series: series));
+      } else {
+        // Fully watched. Find the next episode in the series.
+        final currentIndex = series.episodes.indexWhere((e) => e.id == mostRecent.id);
+        if (currentIndex != -1 && currentIndex < series.episodes.length - 1) {
+          // Scan forward for the first unwatched episode
+          for (int i = currentIndex + 1; i < series.episodes.length; i++) {
+            if (!isFullyWatched(series.episodes[i])) {
+              result.add(ContinueWatchingEntry(
+                file: series.episodes[i], 
+                series: series,
+                overrideSortTime: mostRecent.lastWatchedAt, // Keep the series at the top
+              ));
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Sort all entries by sortTime descending (most recent first)
   result.sort((a, b) {
-    final aTime = a.file.lastWatchedAt;
-    final bTime = b.file.lastWatchedAt;
+    final aTime = a.sortTime;
+    final bTime = b.sortTime;
     if (aTime != null && bTime != null) {
       return bTime.compareTo(aTime);
     }
     if (aTime != null) return -1;
     if (bTime != null) return 1;
-    return 0;
+    // Fallback: higher positionMillis
+    return (b.file.positionMillis ?? 0).compareTo(a.file.positionMillis ?? 0);
   });
 
   return result;
@@ -159,10 +195,16 @@ final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
 class ContinueWatchingEntry {
   final MediaFile file;
   final SeriesItem? series;
+  final DateTime? overrideSortTime;
 
-  const ContinueWatchingEntry({required this.file, this.series});
+  const ContinueWatchingEntry({
+    required this.file,
+    this.series,
+    this.overrideSortTime,
+  });
 
   bool get isSeries => series != null;
+  DateTime? get sortTime => overrideSortTime ?? file.lastWatchedAt;
 }
 
 // ─── Grouped Series ───────────────────────────────────────────────────────

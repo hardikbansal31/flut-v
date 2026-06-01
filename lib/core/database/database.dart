@@ -154,6 +154,44 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Batch marks a list of files as watched.
+  /// Sets position to duration (or 1 if null) to ensure it hits 100% completion.
+  Future<void> markAsWatched(List<int> fileIds) async {
+    if (fileIds.isEmpty) return;
+    
+    await transaction(() async {
+      for (final id in fileIds) {
+        final query = select(mediaFiles)..where((t) => t.id.equals(id));
+        final file = await query.getSingleOrNull();
+        if (file == null) continue;
+        
+        final duration = (file.durationMillis == null || file.durationMillis == 0) 
+            ? 1 
+            : file.durationMillis!;
+            
+        await (update(mediaFiles)..where((t) => t.id.equals(id))).write(
+          MediaFilesCompanion(
+            positionMillis: Value(duration),
+            durationMillis: Value(duration),
+            lastWatchedAt: Value(DateTime.now()),
+          ),
+        );
+      }
+    });
+  }
+
+  /// Batch marks a list of files as unwatched.
+  Future<void> markAsUnwatched(List<int> fileIds) async {
+    if (fileIds.isEmpty) return;
+    
+    await (update(mediaFiles)..where((t) => t.id.isIn(fileIds))).write(
+      const MediaFilesCompanion(
+        positionMillis: Value(0),
+        lastWatchedAt: Value(null), // Clear lastWatchedAt so it resets fully
+      ),
+    );
+  }
+
   /// Remove a single media file by its path.
   Future<void> removeMediaFileByPath(String path) async {
     await (delete(mediaFiles)..where((t) => t.filePath.equals(path))).go();
