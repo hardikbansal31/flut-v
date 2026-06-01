@@ -1,4 +1,4 @@
-import 'package:flutter_video/features/metadata/filename_parser.dart';
+
 
 void main() {
   final extPattern = RegExp(r'\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|ts)$', caseSensitive: false);

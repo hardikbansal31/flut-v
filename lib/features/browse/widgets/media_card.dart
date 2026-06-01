@@ -126,9 +126,8 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          transform: Matrix4.identity()
-            ..translate(0.0, _hovering ? -4.0 : 0.0)
-            ..scale(_hovering ? 1.04 : 1.0),
+          transform: Matrix4.translationValues(0.0, _hovering ? -4.0 : 0.0, 0.0) *
+                     Matrix4.diagonal3Values(_hovering ? 1.04 : 1.0, _hovering ? 1.04 : 1.0, 1.0),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/core/database/database.dart';
 
@@ -16,5 +17,5 @@ void main() {
     tmdbTitle: null, // Let's assume tmdbTitle is null
   );
 
-  print(SeriesItem.episodeLabelFor(file));
+  debugPrint(SeriesItem.episodeLabelFor(file));
 }

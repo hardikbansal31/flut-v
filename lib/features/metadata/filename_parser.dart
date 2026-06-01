@@ -8,6 +8,8 @@
 ///   - `[HorribleSubs] My Hero Academia - 15 [720p].mkv` → (title: "My Hero Academia", S01E15)
 library;
 
+import 'package:flutter/foundation.dart';
+
 /// Result of parsing a media filename.
 class ParsedFilename {
   final String cleanTitle;
@@ -177,7 +179,7 @@ class FilenameParser {
           season = 1;
           episode = candidateEp;
           working = working.substring(0, absMatch.start);
-          print('[FilenameParser] Warning: absolute episode number ($candidateEp) '
+          debugPrint('[FilenameParser] Warning: absolute episode number ($candidateEp) '
               'detected, assuming season 1');
         }
       }

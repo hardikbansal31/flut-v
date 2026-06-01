@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_video/features/metadata/filename_parser.dart';
 
 void main() {
@@ -10,6 +11,6 @@ void main() {
   
   for (final name in names) {
     final parsed = FilenameParser.parse(name);
-    print('$name -> S${parsed.season}E${parsed.episode}');
+    debugPrint('$name -> S${parsed.season}E${parsed.episode}');
   }
 }

@@ -201,6 +201,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   icon: Icon(PhosphorIcons.floppyDisk(), size: 18),
                   label: const Text('Save'),
                   style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: kAccentColor,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 16),
@@ -224,6 +225,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                       ? 'Fetching... ${fetchStatus.remainingFiles} remaining'
                       : 'Fetch Metadata'),
                   style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: Colors.white12,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
@@ -235,6 +237,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   icon: Icon(PhosphorIcons.arrowsClockwise(), size: 18),
                   label: const Text('Refresh All'),
                   style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: Colors.white12,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
@@ -272,6 +275,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   icon: Icon(PhosphorIcons.plus()),
                   label: const Text('Add Folder'),
                   style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: kAccentColor,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
@@ -293,6 +297,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                       : Icon(PhosphorIcons.arrowsClockwise()),
                   label: const Text('Rescan All'),
                   style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: Colors.white12,
                   ),
                 ),

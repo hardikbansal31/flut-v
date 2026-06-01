@@ -121,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(child: SizedBox(height: 32)),
 
           // 3. Recently Added
-          const _RecentlyAddedSection(),
+          _RecentlyAddedSection(),
 
           // 4–7. Category grids (returns multiple slivers internally)
           _CategoryGridsSliverSection(),

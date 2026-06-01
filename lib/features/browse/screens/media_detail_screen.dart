@@ -48,7 +48,7 @@ class MediaDetailScreen extends ConsumerWidget {
 
     final isSeries = currentSeries != null;
     final item = isSeries
-        ? MediaItem.fromSeriesItem(currentSeries!)
+        ? MediaItem.fromSeriesItem(currentSeries)
         : MediaItem.fromMediaFile(currentMediaFile!);
 
     return Scaffold(
@@ -67,7 +67,7 @@ class MediaDetailScreen extends ConsumerWidget {
 
           // ── Content section ───────────────────────────────────────────
           if (isSeries)
-            ...currentSeries!.seasons.map((season) {
+            ...currentSeries.seasons.map((season) {
               return SliverMainAxisGroup(
                 slivers: [
                   // Season header
@@ -158,7 +158,7 @@ class MediaDetailScreen extends ConsumerWidget {
                     Builder(
                       builder: (context) {
                         final duration = currentMediaFile!.durationMillis ?? 0;
-                        final position = currentMediaFile!.positionMillis ?? 0;
+                        final position = currentMediaFile.positionMillis ?? 0;
                         final progress = duration > 0 ? (position / duration).clamp(0.0, 1.0) : 0.0;
                         final isFullyWatched = progress >= 0.95;
                         

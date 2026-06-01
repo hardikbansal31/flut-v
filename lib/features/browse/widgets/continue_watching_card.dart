@@ -54,9 +54,8 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
           curve: Curves.easeOut,
           width: 220,
           height: 140,
-          transform: Matrix4.identity()
-            ..translate(0.0, _hovering ? -4.0 : 0.0)
-            ..scale(_hovering ? 1.04 : 1.0),
+          transform: Matrix4.translationValues(0.0, _hovering ? -4.0 : 0.0, 0.0) *
+                     Matrix4.diagonal3Values(_hovering ? 1.04 : 1.0, _hovering ? 1.04 : 1.0, 1.0),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
