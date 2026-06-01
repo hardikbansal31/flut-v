@@ -34,6 +34,7 @@ import 'package:flutter_video/features/browse/widgets/hero_banner.dart';
 import 'package:flutter_video/features/browse/widgets/horizontal_media_row.dart';
 import 'package:flutter_video/features/browse/widgets/media_grid.dart';
 import 'package:flutter_video/features/browse/screens/category_screen.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -129,9 +130,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(child: _EmptyLibraryPlaceholder()),
 
           SliverToBoxAdapter(child: SizedBox(height: 48)),
-
-          // ── Footer ──
-          _FooterSliver(),
         ],
       ),
 
@@ -534,40 +532,6 @@ class _CategoryGridsSliverSectionState
   }
 }
 
-// ─── Footer ─────────────────────────────────────────────────────────────────
-
-class _FooterSliver extends StatelessWidget {
-  const _FooterSliver();
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 32),
-          child: Column(
-            children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [kAccentColor, kProgressFill],
-                ).createShader(bounds),
-                child: const Text(
-                  'FluxPlayer',
-                  style: AppTextStyles.footerTitle,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Your media, beautifully organized.',
-                style: AppTextStyles.footerSubtitle,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── Empty Library Placeholder ──────────────────────────────────────────────
 
@@ -590,9 +554,9 @@ class _EmptyLibraryPlaceholder extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 60),
         child: Column(
           children: [
-            const Icon(Icons.folder_open, size: 64, color: kMutedText),
+            Icon(PhosphorIcons.folderOpen(), size: 64, color: kMutedText),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Your library is empty',
               style: AppTextStyles.emptyLibraryTitle,
             ),
@@ -728,17 +692,9 @@ class _FadingAppBarState extends State<_FadingAppBar> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              // App logo — RepaintBoundary caches the ShaderMask rasterisation.
-              RepaintBoundary(
-                child: ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [kAccentColor, kProgressFill],
-                  ).createShader(bounds),
-                  child: const Text(
-                    'FluxPlayer',
-                    style: AppTextStyles.brandTitle,
-                  ),
-                ),
+              Text(
+                'Penguin',
+                style: AppTextStyles.brandTitle,
               ),
               if (widget.isScanning) ...[
                 const SizedBox(width: 16),
@@ -770,12 +726,12 @@ class _FadingAppBarState extends State<_FadingAppBar> {
               ),
               const SizedBox(width: 16),
               IconButton(
-                icon: const Icon(Icons.search_rounded),
+                icon: Icon(PhosphorIcons.magnifyingGlass()),
                 onPressed: () {},
                 tooltip: 'Search',
               ),
               IconButton(
-                icon: const Icon(Icons.settings_rounded),
+                icon: Icon(PhosphorIcons.gear()),
                 onPressed: () {
                   Navigator.push(
                     context,

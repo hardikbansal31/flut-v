@@ -41,7 +41,7 @@ void main() async {
   runApp(
     UncontrolledProviderScope(
       container: container,
-      child: const FluxPlayerApp(),
+      child: const PenguinApp(),
     ),
   );
 }

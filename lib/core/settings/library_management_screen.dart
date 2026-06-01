@@ -4,6 +4,7 @@ import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_service.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LibraryManagementScreen extends ConsumerStatefulWidget {
   const LibraryManagementScreen({super.key});
@@ -160,12 +161,12 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── TMDB API Key Section ──
-            const Text(
+            Text(
               'TMDB API Key',
               style: AppTextStyles.sectionHeader,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Enter your TMDB API key (v3 auth) to fetch movie/TV metadata, posters, and ratings.',
               style: AppTextStyles.bodyMuted,
             ),
@@ -184,8 +185,8 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                       suffixIcon: IconButton(
                         icon: Icon(
                           _apiKeyObscured
-                              ? Icons.visibility_off_rounded
-                              : Icons.visibility_rounded,
+                              ? PhosphorIcons.eyeClosed()
+                              : PhosphorIcons.eye(),
                           size: 20,
                         ),
                         onPressed: () =>
@@ -197,7 +198,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _saveApiKey,
-                  icon: const Icon(Icons.save_rounded, size: 18),
+                  icon: Icon(PhosphorIcons.floppyDisk(), size: 18),
                   label: const Text('Save'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kAccentColor,
@@ -218,7 +219,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.download_rounded, size: 18),
+                      : Icon(PhosphorIcons.download(), size: 18),
                   label: Text(fetchStatus.isFetching
                       ? 'Fetching... ${fetchStatus.remainingFiles} remaining'
                       : 'Fetch Metadata'),
@@ -231,7 +232,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: fetchStatus.isFetching ? null : _refreshMetadata,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  icon: Icon(PhosphorIcons.arrowsClockwise(), size: 18),
                   label: const Text('Refresh All'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white12,
@@ -247,7 +248,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
             const SizedBox(height: 24),
 
             // ── Library Folders Section ──
-            const Text(
+            Text(
               'Add a folder to scan for video files:',
               style: AppTextStyles.settingsSectionHeader,
             ),
@@ -268,7 +269,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: _addFolder,
-                  icon: const Icon(Icons.add),
+                  icon: Icon(PhosphorIcons.plus()),
                   label: const Text('Add Folder'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kAccentColor,
@@ -281,7 +282,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Library Folders',
                   style: AppTextStyles.sectionHeader,
                 ),
@@ -289,7 +290,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   onPressed: isScanning ? null : _triggerScan,
                   icon: isScanning 
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.refresh),
+                      : Icon(PhosphorIcons.arrowsClockwise()),
                   label: const Text('Rescan All'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white12,
@@ -302,7 +303,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
               child: foldersAsync.when(
                 data: (folders) {
                   if (folders.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text('No library folders configured.', style: AppTextStyles.textMutedOnly),
                     );
                   }
@@ -315,11 +316,11 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                         color: Colors.white10,
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
-                          leading: const Icon(Icons.folder, color: kAccentColor),
+                          leading: Icon(PhosphorIcons.folder(), color: kAccentColor),
                           title: Text(folder.label ?? folder.path),
                           subtitle: Text(folder.path),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                            icon: Icon(PhosphorIcons.trash(), color: Colors.redAccent),
                             onPressed: () => _removeFolder(folder.id),
                             tooltip: 'Remove folder',
                           ),

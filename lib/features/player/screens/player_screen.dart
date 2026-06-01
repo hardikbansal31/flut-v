@@ -10,6 +10,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 
 /// Fullscreen player screen using media_kit and window_manager.
@@ -203,7 +204,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
                     ),
                   ),
-                  trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+                  trailing: isSelected ? Icon(PhosphorIcons.check(), color: Theme.of(context).colorScheme.primary) : null,
                   onTap: () {
                     player.setSubtitleTrack(track);
                     Navigator.of(context).pop();
@@ -264,7 +265,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             const BackButton(color: Colors.white),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.subtitles, color: Colors.white),
+              icon: Icon(PhosphorIcons.subtitles(), color: Colors.white),
               onPressed: _showSubtitleDialog,
             ),
           ],
@@ -274,7 +275,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             const BackButton(color: Colors.white),
             const Spacer(),
             IconButton(
-              icon: const Icon(Icons.subtitles, color: Colors.white),
+              icon: Icon(PhosphorIcons.subtitles(), color: Colors.white),
               onPressed: _showSubtitleDialog,
             ),
           ],
@@ -285,7 +286,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               const BackButton(color: Colors.white),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.subtitles, color: Colors.white),
+                icon: Icon(PhosphorIcons.subtitles(), color: Colors.white),
                 onPressed: _showSubtitleDialog,
               ),
             ],
@@ -295,7 +296,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               const BackButton(color: Colors.white),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.subtitles, color: Colors.white),
+                icon: Icon(PhosphorIcons.subtitles(), color: Colors.white),
                 onPressed: _showSubtitleDialog,
               ),
             ],

@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HorizontalMediaRow extends StatelessWidget {
   const HorizontalMediaRow({
@@ -51,7 +52,7 @@ class HorizontalMediaRow extends StatelessWidget {
               if (onSeeAll != null)
                 TextButton(
                   onPressed: onSeeAll,
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
@@ -59,7 +60,7 @@ class HorizontalMediaRow extends StatelessWidget {
                         style: AppTextStyles.seeAll,
                       ),
                       SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_ios_rounded,
+                      Icon(PhosphorIcons.caretRight(),
                           size: 12, color: kAccentColor),
                     ],
                   ),

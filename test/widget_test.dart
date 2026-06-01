@@ -39,13 +39,13 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
         ],
-        child: const FluxPlayerApp(),
+        child: const PenguinApp(),
       ),
     );
     await tester.pumpAndSettle();
 
     // Verify the app title / logo is present.
-    expect(find.text('FluxPlayer'), findsWidgets);
+    expect(find.text('Penguin'), findsWidgets);
 
     // Verify Continue Watching is visible because we seeded a partially watched file.
     expect(find.text('Continue Watching'), findsOneWidget);

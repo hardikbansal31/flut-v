@@ -17,6 +17,7 @@ import 'package:flutter_video/features/metadata/tmdb_client.dart' as tmdb;
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class MediaDetailScreen extends ConsumerWidget {
   const MediaDetailScreen({super.key, this.series, this.mediaFile})
@@ -140,7 +141,7 @@ class MediaDetailScreen extends ConsumerWidget {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                        icon: Icon(PhosphorIcons.play(PhosphorIconsStyle.fill), size: 28),
                         label: const Text('Play'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kAccentColor,
@@ -170,7 +171,7 @@ class MediaDetailScreen extends ConsumerWidget {
                               await db.markAsWatched([currentMediaFile!.id]);
                             }
                           },
-                          icon: Icon(isFullyWatched ? Icons.remove_done_rounded : Icons.done_all_rounded, size: 28),
+                          icon: Icon(isFullyWatched ? PhosphorIcons.minusCircle() : PhosphorIcons.checks(), size: 28),
                           label: Text(isFullyWatched ? 'Unwatched' : 'Watched'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isFullyWatched ? kSurfaceColor : kCardColor,
@@ -262,8 +263,8 @@ class _BackdropBanner extends StatelessWidget {
                   color: Colors.black.withValues(alpha: 0.4),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
+                child: Icon(
+                  PhosphorIcons.arrowLeft(),
                   color: Colors.white,
                   size: 22,
                 ),
@@ -313,7 +314,7 @@ class _MediaInfoSection extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded,
+                    Icon(PhosphorIcons.star(PhosphorIconsStyle.fill),
                         size: 16, color: kSecondaryAccent),
                     const SizedBox(width: 4),
                     Text(
@@ -468,8 +469,8 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                       else
                         Container(
                           color: kCardColor,
-                          child: const Center(
-                            child: Icon(Icons.movie_rounded,
+                          child: Center(
+                            child: Icon(PhosphorIcons.filmSlate(),
                                 color: kMutedText, size: 28),
                           ),
                         ),
@@ -478,8 +479,8 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                       if (_hovering)
                         Container(
                           color: Colors.black.withValues(alpha: 0.4),
-                          child: const Center(
-                            child: Icon(Icons.play_circle_fill_rounded,
+                          child: Center(
+                            child: Icon(PhosphorIcons.playCircle(PhosphorIconsStyle.fill),
                                 size: 36, color: Colors.white),
                           ),
                         ),
@@ -572,7 +573,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
               if (_hovering || isFullyWatched)
                 IconButton(
                   icon: Icon(
-                    isFullyWatched ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
+                    isFullyWatched ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill) : PhosphorIcons.checkCircle(),
                   ),
                   color: isFullyWatched ? kSecondaryAccent : kMutedText.withValues(alpha: 0.5),
                   onPressed: isFullyWatched ? widget.onMarkUnwatched : widget.onMarkWatched,
@@ -585,7 +586,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Icon(
-                  Icons.play_arrow_rounded,
+                  PhosphorIcons.play(PhosphorIconsStyle.fill),
                   color: _hovering
                       ? Colors.white
                       : kMutedText.withValues(alpha: 0.5),

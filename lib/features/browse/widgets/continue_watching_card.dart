@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ContinueWatchingCard extends StatefulWidget {
   const ContinueWatchingCard({
@@ -53,24 +54,30 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
           curve: Curves.easeOut,
           width: 220,
           height: 140,
-          transform: Matrix4.diagonal3Values(
-            _hovering ? 1.04 : 1.0,
-            _hovering ? 1.04 : 1.0,
-            1.0,
-          ),
+          transform: Matrix4.identity()
+            ..translate(0.0, _hovering ? -4.0 : 0.0)
+            ..scale(_hovering ? 1.04 : 1.0),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Color(colors[0]).withValues(alpha: _hovering ? 0.45 : 0.2),
-                blurRadius: _hovering ? 18 : 6,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: _hovering
+                ? [
+                    BoxShadow(
+                      color: AppTheme.accent.withValues(alpha: 0.25),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: Color(colors[0]).withValues(alpha: 0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -110,8 +117,8 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
+                      child: Icon(
+                        PhosphorIcons.play(PhosphorIconsStyle.fill),
                         color: Colors.white,
                         size: 28,
                       ),
@@ -193,7 +200,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                 if (_hovering)
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: kProgressFill.withValues(alpha: 0.5),
                         width: 1.5,

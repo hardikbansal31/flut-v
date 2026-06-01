@@ -8,13 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/screens/home_screen.dart';
 
-class FluxPlayerApp extends StatelessWidget {
-  const FluxPlayerApp({super.key});
+class PenguinApp extends StatelessWidget {
+  const PenguinApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FluxPlayer',
+      title: 'Penguin',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       home: const HomeScreen(),

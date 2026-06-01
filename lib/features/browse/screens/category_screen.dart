@@ -6,6 +6,7 @@ import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/features/browse/screens/media_detail_screen.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:flutter_video/features/browse/widgets/media_grid.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class CategoryScreen extends ConsumerWidget {
   final String title;
@@ -65,12 +66,12 @@ class CategoryScreen extends ConsumerWidget {
         backgroundColor: kBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(PhosphorIcons.caretLeft(), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: items.isEmpty 
-          ? const Center(child: Text('No media found', style: AppTextStyles.emptyLibraryTitle))
+          ? Center(child: Text('No media found', style: AppTextStyles.emptyLibraryTitle))
           : CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(child: SizedBox(height: 16)),

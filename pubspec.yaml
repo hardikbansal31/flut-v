@@ -30,6 +30,7 @@ dependencies:
   # Phase 4 — TMDB metadata
   http: ^1.4.0
   shared_preferences: ^2.5.0
+  phosphor_flutter: ^2.1.0
 
 dev_dependencies:
   flutter_test:

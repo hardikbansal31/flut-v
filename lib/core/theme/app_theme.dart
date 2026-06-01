@@ -11,16 +11,16 @@ import 'package:google_fonts/google_fonts.dart';
 // ─── Color palette ──────────────────────────────────────────────────────────
 
 /// Deep background used for scaffold & main surfaces.
-const Color kBackgroundColor = Color(0xFF0A0A12);
+const Color kBackgroundColor = Color(0xFF0A0A0F);
 
 /// Slightly lighter surface for cards, bottom sheets, dialogs.
-const Color kSurfaceColor = Color(0xFF14141F);
+const Color kSurfaceColor = Color(0xFF13131A);
 
 /// Card overlay / elevated surface.
-const Color kCardColor = Color(0xFF1C1C2E);
+const Color kCardColor = Color(0xFF13131A);
 
 /// Primary accent — vibrant indigo-violet.
-const Color kAccentColor = Color(0xFF7B61FF);
+const Color kAccentColor = Color(0xFFE8556D);
 
 /// Secondary accent — warm amber for ratings, highlights.
 const Color kSecondaryAccent = Color(0xFFFFAB40);
@@ -52,46 +52,46 @@ class AppTheme {
 
 class AppTextStyles {
   // Common
-  static const sectionHeader = TextStyle(fontSize: 20, fontWeight: FontWeight.w700);
-  static const sectionSubHeader = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
-  static const seeAll = TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: kAccentColor);
-  static const brandTitle = TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5);
-  static const fetchStatus = TextStyle(fontSize: 13, color: Colors.white70);
-  static const bodyMuted = TextStyle(fontSize: 14, color: kMutedText);
-  static const textMutedOnly = TextStyle(color: kMutedText);
+  static final TextStyle sectionHeader = GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700);
+  static final TextStyle sectionSubHeader = GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700);
+  static final TextStyle seeAll = GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: kAccentColor);
+  static final TextStyle brandTitle = GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5);
+  static final TextStyle fetchStatus = GoogleFonts.inter(fontSize: 13, color: Colors.white70);
+  static final TextStyle bodyMuted = GoogleFonts.inter(fontSize: 14, color: kMutedText);
+  static final TextStyle textMutedOnly = GoogleFonts.inter(color: kMutedText);
 
   // Cards
-  static const cardTitle = TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3);
-  static const cardMeta = TextStyle(fontSize: 10, color: kMutedText);
-  static const cardRating = TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: kSecondaryAccent);
-  static const ratingBadge = TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white);
-  static const continueWatchingTitle = TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white);
+  static final TextStyle cardTitle = GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3);
+  static final TextStyle cardMeta = GoogleFonts.inter(fontSize: 10, color: kMutedText);
+  static final TextStyle cardRating = GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: kSecondaryAccent);
+  static final TextStyle ratingBadge = GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white);
+  static final TextStyle continueWatchingTitle = GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white);
 
   // Series Detail
-  static const seriesTitle = TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5, height: 1.2);
-  static const seriesMeta = TextStyle(fontSize: 14, color: kMutedText, fontWeight: FontWeight.w500);
-  static const seriesRating = TextStyle(fontSize: 14, color: kSecondaryAccent, fontWeight: FontWeight.w600);
-  static const overview = TextStyle(fontSize: 14, color: Colors.white70, height: 1.5);
-  static const episodeTitle = TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white);
-  static const episodeMeta = TextStyle(fontSize: 12, color: kMutedText);
-  static const genreTag = TextStyle(fontSize: 12, fontWeight: FontWeight.w500);
-  static const episodeNumber = TextStyle(fontSize: 11, fontWeight: FontWeight.w700);
-  static const progressText = TextStyle(fontSize: 12);
+  static final TextStyle seriesTitle = GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5, height: 1.2);
+  static final TextStyle seriesMeta = GoogleFonts.inter(fontSize: 14, color: kMutedText, fontWeight: FontWeight.w500);
+  static final TextStyle seriesRating = GoogleFonts.inter(fontSize: 14, color: kSecondaryAccent, fontWeight: FontWeight.w600);
+  static final TextStyle overview = GoogleFonts.inter(fontSize: 14, color: Colors.white70, height: 1.5);
+  static final TextStyle episodeTitle = GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white);
+  static final TextStyle episodeMeta = GoogleFonts.inter(fontSize: 12, color: kMutedText);
+  static final TextStyle genreTag = GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500);
+  static final TextStyle episodeNumber = GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700);
+  static final TextStyle progressText = GoogleFonts.inter(fontSize: 12);
 
   // Hero Banner
-  static const genreTagHero = TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white70);
-  static const overviewHero = TextStyle(fontSize: 13, color: Colors.white54, height: 1.5);
-  static const buttonText = TextStyle(fontWeight: FontWeight.w600, fontSize: 15);
-  static const buttonTextSecondary = TextStyle(fontWeight: FontWeight.w500, fontSize: 14);
+  static final TextStyle genreTagHero = GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white70);
+  static final TextStyle overviewHero = GoogleFonts.inter(fontSize: 13, color: Colors.white54, height: 1.5);
+  static final TextStyle buttonText = GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15);
+  static final TextStyle buttonTextSecondary = GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 14);
 
   // Settings
-  static const settingsSectionHeader = TextStyle(fontSize: 16, fontWeight: FontWeight.w700);
+  static final TextStyle settingsSectionHeader = GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w700);
 
   // Home Screen
-  static const footerTitle = TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white);
-  static const footerSubtitle = TextStyle(color: kMutedText, fontSize: 12);
-  static const emptyLibraryTitle = TextStyle(fontSize: 18, color: Colors.white70);
-  static const navItem = TextStyle(fontSize: 14);
+  static final TextStyle footerTitle = GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white);
+  static final TextStyle footerSubtitle = GoogleFonts.inter(color: kMutedText, fontSize: 12);
+  static final TextStyle emptyLibraryTitle = GoogleFonts.outfit(fontSize: 18, color: Colors.white70);
+  static final TextStyle navItem = GoogleFonts.inter(fontSize: 14);
 }
 
 // ─── Theme builder ──────────────────────────────────────────────────────────
@@ -114,32 +114,32 @@ ThemeData buildAppTheme() {
     ),
     textTheme: textTheme.copyWith(
       // Hero title
-      headlineLarge: textTheme.headlineLarge?.copyWith(
+      headlineLarge: GoogleFonts.outfit(
         fontSize: 32,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.5,
         color: Colors.white,
       ),
       // Section headings (e.g. "Continue Watching")
-      titleLarge: textTheme.titleLarge?.copyWith(
+      titleLarge: GoogleFonts.outfit(
         fontSize: 20,
         fontWeight: FontWeight.w700,
         color: Colors.white,
       ),
       // Card titles
-      titleMedium: textTheme.titleMedium?.copyWith(
+      titleMedium: GoogleFonts.outfit(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: Colors.white,
       ),
       // Metadata / subtitles
-      bodySmall: textTheme.bodySmall?.copyWith(
+      bodySmall: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: kMutedText,
       ),
       // Body text
-      bodyMedium: textTheme.bodyMedium?.copyWith(
+      bodyMedium: GoogleFonts.inter(
         fontSize: 14,
         color: Colors.white70,
       ),
@@ -149,7 +149,7 @@ ThemeData buildAppTheme() {
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      titleTextStyle: textTheme.titleLarge?.copyWith(
+      titleTextStyle: GoogleFonts.outfit(
         fontSize: 22,
         fontWeight: FontWeight.w700,
         color: Colors.white,

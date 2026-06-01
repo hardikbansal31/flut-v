@@ -14,6 +14,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HeroBanner extends StatefulWidget {
   const HeroBanner({super.key, required this.items, this.onPlay, this.onMoreInfo});
@@ -171,24 +172,6 @@ class _HeroBannerSlide extends StatelessWidget {
           _GradientBackdrop(colors: colors),
         ],
 
-        // ── Decorative radial glow ──
-        Positioned(
-          top: -60,
-          right: -40,
-          child: Container(
-            width: 300,
-            height: 300,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Color(colors[0]).withValues(alpha: 0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
 
         // ── Content overlay ──
         Positioned(
@@ -243,12 +226,12 @@ class _HeroBannerSlide extends StatelessWidget {
                       style: AppTextStyles.seriesMeta,
                     ),
                   if (item.year != null && item.rating != null)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text('•', style: AppTextStyles.textMutedOnly),
                     ),
                   if (item.rating != null) ...[
-                    const Icon(Icons.star_rounded,
+                    Icon(PhosphorIcons.star(PhosphorIconsStyle.fill),
                         color: kSecondaryAccent, size: 18),
                     const SizedBox(width: 4),
                     Text(
@@ -257,21 +240,21 @@ class _HeroBannerSlide extends StatelessWidget {
                     ),
                   ],
                   if (item.type == MediaType.tvShow) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text('•', style: AppTextStyles.textMutedOnly),
                     ),
-                    const Text(
+                    Text(
                       'TV Series',
                       style: AppTextStyles.seriesMeta,
                     ),
                   ],
                   if (item.type == MediaType.anime) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text('•', style: AppTextStyles.textMutedOnly),
                     ),
-                    const Text(
+                    Text(
                       'Anime',
                       style: AppTextStyles.seriesMeta,
                     ),
@@ -298,7 +281,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   // Play button
                   ElevatedButton.icon(
                     onPressed: onPlay,
-                    icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                    icon: Icon(PhosphorIcons.play(PhosphorIconsStyle.fill), size: 22),
                     label: const Text('Play'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kAccentColor,
@@ -315,7 +298,7 @@ class _HeroBannerSlide extends StatelessWidget {
                   // More info button
                   OutlinedButton.icon(
                     onPressed: onMoreInfo,
-                    icon: const Icon(Icons.info_outline_rounded, size: 20),
+                    icon: Icon(PhosphorIcons.info(), size: 20),
                     label: const Text('More Info'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white70,

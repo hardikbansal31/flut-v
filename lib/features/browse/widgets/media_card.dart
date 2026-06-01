@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class MediaCard extends StatelessWidget {
   const MediaCard({
@@ -81,7 +82,7 @@ class MediaCard extends StatelessWidget {
                   if (item.year != null && item.rating != null)
                     const SizedBox(width: 6),
                   if (item.rating != null) ...[
-                    const Icon(Icons.star_rounded,
+                    Icon(PhosphorIcons.star(PhosphorIconsStyle.fill),
                         size: 12, color: kSecondaryAccent),
                     const SizedBox(width: 2),
                     Text(
@@ -125,20 +126,18 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          transform: Matrix4.diagonal3Values(
-            _hovering ? 1.05 : 1.0,
-            _hovering ? 1.05 : 1.0,
-            1.0,
-          ),
+          transform: Matrix4.identity()
+            ..translate(0.0, _hovering ? -4.0 : 0.0)
+            ..scale(_hovering ? 1.04 : 1.0),
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             boxShadow: _hovering
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
+                      color: AppTheme.accent.withValues(alpha: 0.25),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
                     )
                   ]
                 : [
@@ -157,9 +156,9 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
                 Positioned.fill(
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.3),
-                    child: const Center(
+                    child: Center(
                       child: Icon(
-                        Icons.play_circle_fill_rounded,
+                        PhosphorIcons.playCircle(PhosphorIconsStyle.fill),
                         size: 48,
                         color: Colors.white,
                       ),
@@ -202,10 +201,10 @@ class _GradientPlaceholder extends StatelessWidget {
         Center(
           child: Icon(
             type == MediaType.tvShow
-                ? Icons.live_tv_rounded
+                ? PhosphorIcons.television()
                 : type == MediaType.anime
-                    ? Icons.animation_rounded
-                    : Icons.movie_rounded,
+                    ? PhosphorIcons.filmStrip()
+                    : PhosphorIcons.filmSlate(),
             size: 40,
             color: Colors.white.withValues(alpha: 0.15),
           ),
