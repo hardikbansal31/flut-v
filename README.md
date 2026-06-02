@@ -4,7 +4,7 @@ A beautiful, cross-platform media player with a Netflix-style UI, built with Flu
 
 ## Demo
 
-<video src="./assets/demo.mp4" width="100%" controls autoplay loop muted></video>
+![Penguin Demo](./assets/output.gif)
 
 ## Screenshots
 
