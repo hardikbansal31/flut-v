@@ -47,8 +47,17 @@ When you enter your TMDB API key in Penguin, it is **stored locally on your devi
 ## Platform Support
 
 - **Linux**: Fully working and tested.
-- **Windows**: Work is currently underway.
-- **iOS, Web, Android**: Not yet tested (but architecturally possible via Flutter).
+- **Windows**: Fully working and tested.
+- **iOS, Web, Android**: Architecturally possible via Flutter, but not yet officially tested.
+
+## Download & Installation
+
+The easiest way to run Penguin is to download precompiled binaries from the **[Releases](../../releases)** section of this repository:
+
+- **Windows**: Download `Penguin_Installer.exe` and run the installer to set up the app on your system.
+- **Linux**: Download the `.deb` package and install it using your package manager (e.g., `sudo dpkg -i penguin_1.0.0-1_amd64.deb`).
+
+---
 
 ## Building from Source (Linux)
 
@@ -79,15 +88,44 @@ To build a release executable:
 flutter build linux
 ```
 
+---
+
+## Building from Source (Windows)
+
+To compile and run Penguin on Windows, you will need the standard Flutter Windows build dependencies.
+
+### 1. Install Dependencies
+
+- Install the [Flutter SDK](https://docs.flutter.dev/get-started/install/windows).
+- Install [Visual Studio](https://visualstudio.microsoft.com/) with the **"Desktop development with C++"** workload checked.
+
+### 2. Build and Run
+
+Clone the repository and run:
+
+```powershell
+flutter pub get
+flutter run -d windows
+```
+
+To build a release executable:
+```powershell
+flutter build windows
+```
+
+To compile a standalone setup installer, use [Inno Setup](https://jrsoftware.org/isinfo.php) to build the `installer.iss` script in the root directory.
+
+---
+
 ## Notes
 
 - **Performance**(Linux only): For best performance, 100% display scaling is recommended. Fractional scaling (125%, 150%) may cause subtitle blurriness — a known Flutter/libmpv limitation being tracked.
 
 ## TODO
 
+- [.] Complete Windows support and test native compilation.
 - [ ] Test and optimize for Android, iOS, and Web platforms.
 - [ ] Fix UI stuttering and smooth out animations on linux.
 - [ ] Streamline the automatic media detection and metadata fetching flow.
-- [ ] Fix performance drops and blurry subtitles when using display scaling other than 100%.
 - [ ] Add more comprehensive custom subtitle styling options.
 - [ ] Implement smart playlists or custom collections.
