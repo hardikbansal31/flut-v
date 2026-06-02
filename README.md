@@ -119,13 +119,13 @@ To compile a standalone setup installer, use [Inno Setup](https://jrsoftware.org
 
 ## Notes
 
-- **Performance**(Linux only): For best performance, 100% display scaling is recommended. Fractional scaling (125%, 150%) may cause subtitle blurriness — a known Flutter/libmpv limitation being tracked.
+- **Performance** (Linux only): For best performance, 100% display scaling is recommended. The app runs smoother after shaders have been compiled.
 
 ## TODO
 
-- [.] Complete Windows support and test native compilation.
 - [ ] Test and optimize for Android, iOS, and Web platforms.
-- [ ] Fix UI stuttering and smooth out animations on linux.
 - [ ] Streamline the automatic media detection and metadata fetching flow.
 - [ ] Add more comprehensive custom subtitle styling options.
 - [ ] Implement smart playlists or custom collections.
+- [ ] Add cast info in more info page.
+- [ ] Add keyboard shortcuts
