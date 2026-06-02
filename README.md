@@ -21,6 +21,17 @@ My main inspiration was the Infuse app on iOS, which features a modern UI and ex
 - **Advanced Subtitle Rendering**: Prioritizes native subtitle styles (like ASS/SSA) with configurable fallbacks.
 - **Privacy-First**: Your data stays yours. Watch states and libraries are stored completely locally using SQLite (Drift).
 
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [Flutter](https://flutter.dev/) (Dart) |
+| Playback | [media_kit](https://github.com/media-kit/media-kit) (libmpv) |
+| State Management | [Riverpod](https://riverpod.dev/) |
+| Database | [Drift](https://drift.simonbinder.eu/) (SQLite) |
+| Metadata | [TMDB API](https://www.themoviedb.org/documentation/api) |
+| UI | Material 3, Google Fonts, Phosphor Icons |
+
 ## TMDB API Key & Privacy
 
 To fetch rich metadata (posters, synopses, ratings), Penguin requires a TMDB API key. 
@@ -70,11 +81,10 @@ flutter build linux
 
 ## Notes
 
-- **Performance**(Linux only): The app runs significantly smoother when your system display resolution scaling is set to 100%. Additionally, you may experience minor stuttering during the first run as Flutter compiles shaders; performance will improve once shader compilation is complete.
+- **Performance**(Linux only): For best performance, 100% display scaling is recommended. Fractional scaling (125%, 150%) may cause subtitle blurriness — a known Flutter/libmpv limitation being tracked.
 
 ## TODO
 
-- [.] Complete Windows support and test native compilation.
 - [ ] Test and optimize for Android, iOS, and Web platforms.
 - [ ] Fix UI stuttering and smooth out animations on linux.
 - [ ] Streamline the automatic media detection and metadata fetching flow.
