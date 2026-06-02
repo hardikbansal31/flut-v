@@ -2,11 +2,17 @@
 
 A beautiful, cross-platform media player with a Netflix-style UI, built with Flutter. 
 
+## Demo
+
+![Penguin Demo](./assets/output.gif)
+
 ## Screenshots
 
-![Home Screen](./assets/screenshots/home-pg.png)
-![Details View](./assets/screenshots/noir-more-deets.png)
-![Settings](./assets/screenshots/settings.png)
+<p align="center">
+  <img src="./assets/screenshots/home-pg.png" width="32%" alt="Home Screen" />
+  <img src="./assets/screenshots/noir-more-deets.png" width="32%" alt="Details View" />
+  <img src="./assets/screenshots/settings.png" width="32%" alt="Settings" />
+</p>
 
 ## Why I Built This
 
