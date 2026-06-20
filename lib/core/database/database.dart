@@ -1,4 +1,4 @@
-﻿/// FluxPlayer SQLite database powered by Drift.
+/// FluxPlayer SQLite database powered by Drift.
 ///
 /// Aggregates all table definitions and exposes typed query methods
 /// for library folders and media files. Uses `drift_flutter` for
@@ -55,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  // â”€â”€â”€ Library Folder queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Library Folder queries
 
   /// Watch all library folders, ordered by when they were added.
   Stream<List<LibraryFolder>> watchAllLibraryFolders() {
@@ -91,7 +91,7 @@ class AppDatabase extends _$AppDatabase {
     await (delete(libraryFolders)..where((t) => t.id.equals(folderId))).go();
   }
 
-  // â”€â”€â”€ Media File queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Media File queries
 
   /// Watch all media files, ordered by filename.
   Stream<List<MediaFile>> watchAllMediaFiles() {
@@ -212,7 +212,7 @@ class AppDatabase extends _$AppDatabase {
     return rows.map((r) => r.filePath).toList();
   }
 
-  // â”€â”€â”€ Phase 4: Metadata queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Metadata queries
 
   /// Get all media files that have not been matched to TMDB yet (or failed previously).
   Future<List<MediaFile>> getUnmatchedMediaFiles() {

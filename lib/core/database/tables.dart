@@ -1,14 +1,14 @@
-﻿/// Drift table definitions for the FluxPlayer database.
+/// Drift table definitions for the FluxPlayer database.
 ///
 /// Tables:
-///   - [LibraryFolders] â€” user-configured root directories to scan
-///   - [MediaFiles] â€” individual video files discovered by the scanner,
-///     with optional TMDB metadata columns (Phase 4)
+///   - [LibraryFolders] - user-configured root directories to scan
+///   - [MediaFiles] - individual video files discovered by the scanner,
+///     with optional TMDB metadata columns
 library;
 
 import 'package:drift/drift.dart';
 
-// â”€â”€â”€ Library Folders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Library Folders
 
 /// Stores the root directories the user has added to their media library.
 /// Each folder is scanned recursively for video files.
@@ -26,7 +26,7 @@ class LibraryFolders extends Table {
   DateTimeColumn get addedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-// â”€â”€â”€ Media Files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Media Files
 
 /// Stores every video file discovered inside a [LibraryFolder].
 /// Each row represents a single playable file on disk.
@@ -56,10 +56,10 @@ class MediaFiles extends Table {
   /// Last-modified time from the filesystem.
   DateTimeColumn get lastModified => dateTime()();
 
-  /// Total duration of the media in milliseconds (Phase 3).
+  /// Total duration of the media in milliseconds.
   IntColumn get durationMillis => integer().nullable()();
 
-  /// Last watched position in milliseconds (Phase 3).
+  /// Last watched position in milliseconds.
   IntColumn get positionMillis => integer().nullable()();
 
   /// Timestamp of the last time the user watched this file.
@@ -67,7 +67,7 @@ class MediaFiles extends Table {
   /// determine the most recently watched episode within a TV series.
   DateTimeColumn get lastWatchedAt => dateTime().nullable()();
 
-  // â”€â”€ Phase 4: TMDB metadata columns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // TMDB metadata columns
 
   /// TMDB ID for this media. Non-null means metadata has been matched.
   IntColumn get tmdbId => integer().nullable()();
@@ -90,7 +90,7 @@ class MediaFiles extends Table {
   /// Release year extracted from TMDB release_date / first_air_date.
   IntColumn get releaseYear => integer().nullable()();
 
-  /// TMDB vote average (0.0â€“10.0).
+  /// TMDB vote average (0.0-10.0).
   RealColumn get voteAverage => real().nullable()();
 
   /// Comma-separated genre names (e.g. "Action,Sci-Fi,Drama").

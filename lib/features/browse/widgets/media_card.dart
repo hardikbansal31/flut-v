@@ -1,4 +1,4 @@
-﻿/// A standard poster-style media card.
+/// A standard poster-style media card.
 ///
 /// Shows a TMDB poster image when available, falling back to a gradient
 /// placeholder. Includes hover / focus elevation animation for desktop UIs.
@@ -35,7 +35,7 @@ class MediaCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // â”€â”€ Poster image or gradient fallback â”€â”€
+            // Poster image or gradient fallback
             AspectRatio(
               aspectRatio: 2 / 3,
               child: ClipRRect(
@@ -63,7 +63,7 @@ class MediaCard extends StatelessWidget {
                 ),
               ),
 
-              // â”€â”€ Bottom info â”€â”€
+              // Bottom info
               const SizedBox(height: 8),
               Text(
                 item.title,

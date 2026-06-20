@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
@@ -160,7 +160,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // â”€â”€ TMDB API Key Section â”€â”€
+            // TMDB API Key Section
             Text(
               'TMDB API Key',
               style: AppTextStyles.sectionHeader,
@@ -250,7 +250,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
             const Divider(color: kDivider),
             const SizedBox(height: 24),
 
-            // â”€â”€ Library Folders Section â”€â”€
+            // Library Folders Section
             Text(
               'Add a folder to scan for video files:',
               style: AppTextStyles.settingsSectionHeader,

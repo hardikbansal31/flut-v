@@ -1,7 +1,6 @@
-﻿/// Application entry point.
+/// Application entry point.
 ///
-/// Wraps the app in a [ProviderScope] for Riverpod state management
-/// (no providers yet in Phase 1, but the scaffold is ready).
+/// Wraps the app in a [ProviderScope] for Riverpod state management.
 library;
 
 import 'package:flutter/material.dart';

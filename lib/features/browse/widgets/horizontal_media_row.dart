@@ -1,4 +1,4 @@
-﻿/// A labelled horizontal scrolling row of media cards.
+/// A labelled horizontal scrolling row of media cards.
 ///
 /// Used for "Continue Watching", "Recently Added", and similar sections.
 /// Supports both [MediaCard] and [ContinueWatchingCard] via a builder.
@@ -42,7 +42,7 @@ class HorizontalMediaRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // â”€â”€ Section header â”€â”€
+        // Section header
         Padding(
           padding: padding,
           child: Row(
@@ -71,7 +71,7 @@ class HorizontalMediaRow extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // â”€â”€ Scrollable card list â”€â”€
+        // Scrollable card list
         SizedBox(
           height: height,
           child: ListView.separated(

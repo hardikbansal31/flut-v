@@ -1,4 +1,4 @@
-﻿/// Hardcoded dummy data for Phase 1.
+/// Hardcoded dummy data.
 ///
 /// Provides realistic-looking media items for every section of the home
 /// screen: hero banner, Continue Watching, Recently Added, Movies, TV Shows.
@@ -7,7 +7,7 @@ library;
 
 import 'package:flutter_video/features/browse/models/media_item.dart';
 
-// â”€â”€â”€ Hero Banner Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Hero Banner Items
 
 /// Items that cycle in the top hero carousel.
 final List<MediaItem> heroBannerItems = [
@@ -56,7 +56,7 @@ final List<MediaItem> heroBannerItems = [
   ),
 ];
 
-// â”€â”€â”€ Continue Watching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Continue Watching
 
 /// Items the user has partially watched. Each has a non-zero watchedMinutes.
 final List<MediaItem> continueWatchingItems = [
@@ -114,7 +114,7 @@ final List<MediaItem> continueWatchingItems = [
   ),
 ];
 
-// â”€â”€â”€ Recently Added â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Recently Added
 
 final List<MediaItem> recentlyAddedItems = [
   const MediaItem(
@@ -173,7 +173,7 @@ final List<MediaItem> recentlyAddedItems = [
   ),
 ];
 
-// â”€â”€â”€ Movies Collection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Movies Collection
 
 final List<MediaItem> moviesItems = [
   const MediaItem(
@@ -250,7 +250,7 @@ final List<MediaItem> moviesItems = [
   ),
 ];
 
-// â”€â”€â”€ TV Shows Collection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// TV Shows Collection
 
 final List<MediaItem> tvShowsItems = [
   const MediaItem(

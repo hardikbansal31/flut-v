@@ -1,10 +1,10 @@
-﻿/// Home screen â€” the main browse view of the media player.
+/// Home screen - the main browse view of the media player.
 ///
 /// Composes all UI sections into a single [CustomScrollView] with slivers:
 ///   1. Hero banner carousel (top, wrapped in RepaintBoundary)
 ///   2. Continue Watching horizontal row
 ///   3. Recently Added horizontal row
-///   4. Category grids (Movies, TV Shows, Anime, Uncategorized) â€” true SliverGrids
+///   4. Category grids (Movies, TV Shows, Anime, Uncategorized) - true SliverGrids
 ///
 /// Uses a transparent app bar that fades in a background as the user scrolls.
 /// Shows a persistent bottom indicator during metadata fetching.
@@ -51,7 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     // Prune DB entries for files deleted while the app was closed.
     // Uses the lightweight pruneDeletedFiles() which only does DB deletes
-    // for missing files â€” no upserts, so no unnecessary Drift stream
+    // for missing files - no upserts, so no unnecessary Drift stream
     // emissions and zero GPU overhead.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pruneOnStartup();
@@ -77,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Only watch providers that affect the scaffold-level layout.
     final isScanning = ref.watch(scanningStateProvider);
 
-    // Listen for metadata errors (side-effect only â€” not displayed in build).
+    // Listen for metadata errors (side-effect only - not displayed in build).
     ref.listen<MetadataFetchStatus>(metadataFetchProvider, (previous, next) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
@@ -93,7 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      // â”€â”€ Floating app bar (isolated to avoid whole-tree rebuilds) â”€â”€
+      // Floating app bar (isolated to avoid whole-tree rebuilds)
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: _FadingAppBar(
@@ -102,7 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
 
-      // â”€â”€ Scrollable body â€” CustomScrollView with slivers â”€â”€
+      // Scrollable body - CustomScrollView with slivers
       body: CustomScrollView(
         controller: _scrollController,
         slivers: const [
@@ -123,23 +123,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 3. Recently Added
           _RecentlyAddedSection(),
 
-          // 4â€“7. Category grids (returns multiple slivers internally)
+          // 4-7. Category grids (returns multiple slivers internally)
           _CategoryGridsSliverSection(),
 
-          // â”€â”€ Empty state â”€â”€
+          // Empty state
           SliverToBoxAdapter(child: _EmptyLibraryPlaceholder()),
 
           SliverToBoxAdapter(child: SizedBox(height: 48)),
         ],
       ),
 
-      // â”€â”€ Persistent bottom fetch indicator (own ConsumerWidget) â”€â”€
+      // Persistent bottom fetch indicator (own ConsumerWidget)
       bottomNavigationBar: const _FetchStatusBar(),
     );
   }
 }
 
-// â”€â”€â”€ Hero Banner Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Hero Banner Section
 
 /// Watches [allMediaFilesProvider] but caches the [HeroBanner] widget instance.
 /// Only recreates the banner when the first 5 item IDs change, preventing
@@ -253,7 +253,7 @@ class _HeroBannerSectionState extends ConsumerState<_HeroBannerSection> {
   }
 }
 
-// â”€â”€â”€ Continue Watching Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Continue Watching Section
 
 /// Watches [continueWatchingProvider] and groups TV episodes by series.
 /// Shows one card per series (most recently watched episode) and one per movie.
@@ -306,7 +306,7 @@ class _ContinueWatchingSection extends ConsumerWidget {
   }
 }
 
-// â”€â”€â”€ Recently Added Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Recently Added Section
 
 /// Watches [recentlyAddedFilesProvider] and groups TV/anime into series cards.
 class _RecentlyAddedSection extends ConsumerWidget {
@@ -380,10 +380,10 @@ class _RecentItem {
   const _RecentItem({required this.mediaItem, this.file, this.series});
 }
 
-// â”€â”€â”€ Category Grids Sliver Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Category Grids Sliver Section
 
 /// A custom sliver that watches [allMediaFilesProvider] and produces
-/// multiple child slivers â€” one [MediaGrid.buildSlivers] per category.
+/// multiple child slivers - one [MediaGrid.buildSlivers] per category.
 ///
 /// TV Shows and Anime are grouped by series (one card per series),
 /// Movies and Uncategorized show individual files.
@@ -533,7 +533,7 @@ class _CategoryGridsSliverSectionState
 }
 
 
-// â”€â”€â”€ Empty Library Placeholder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Empty Library Placeholder
 
 /// Only watches [allMediaFilesProvider] and [recentlyAddedFilesProvider]
 /// to decide whether to show the empty state.
@@ -582,7 +582,7 @@ class _EmptyLibraryPlaceholder extends ConsumerWidget {
   }
 }
 
-// â”€â”€â”€ Fetch Status Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Fetch Status Bar
 
 /// Isolated ConsumerWidget that watches [metadataFetchProvider] only.
 /// Previously this was inline in the HomeScreen build(), causing the entire
@@ -628,14 +628,14 @@ class _FetchStatusBar extends ConsumerWidget {
   }
 }
 
-// â”€â”€â”€ Fading app bar (own state for scroll-driven opacity) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Fading app bar (own state for scroll-driven opacity)
 
 /// Isolated app bar widget that listens to the scroll controller via a
 /// [ValueNotifier] and only rebuilds the background [Container] color.
 ///
 /// The entire child tree (logo, nav items, buttons) is passed as the
 /// [ValueListenableBuilder.child] so it is built **once** and reused on
-/// every scroll tick â€” zero child rebuilds.
+/// every scroll tick - zero child rebuilds.
 class _FadingAppBar extends StatefulWidget {
   const _FadingAppBar({
     required this.scrollController,
@@ -686,7 +686,7 @@ class _FadingAppBarState extends State<_FadingAppBar> {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<double>(
       valueListenable: _opacity,
-      // â”€â”€ child is built ONCE and reused on every scroll tick â”€â”€
+      // child is built ONCE and reused on every scroll tick
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -746,7 +746,7 @@ class _FadingAppBarState extends State<_FadingAppBar> {
           ),
         ),
       ),
-      // â”€â”€ builder only fires when opacity changes; child is reused â”€â”€
+      // builder only fires when opacity changes; child is reused
       builder: (context, opacity, child) {
         return Container(
           color: kBackgroundColor.withValues(alpha: opacity * 0.95),
@@ -757,7 +757,7 @@ class _FadingAppBarState extends State<_FadingAppBar> {
   }
 }
 
-// â”€â”€â”€ Small nav-bar item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Small nav-bar item
 
 class _NavItem extends StatefulWidget {
   const _NavItem({required this.label, this.isActive = false, this.onTap});

@@ -1,8 +1,8 @@
-﻿/// A labelled grid section that displays media cards in a responsive sliver grid.
+/// A labelled grid section that displays media cards in a responsive sliver grid.
 ///
 /// Used for the "Movies", "TV Shows", "Anime", and "Uncategorized" sections
 /// of the home screen.  Returns a list of slivers suitable for use inside a
-/// [CustomScrollView], which enables true lazy-loading of grid children â€”
+/// [CustomScrollView], which enables true lazy-loading of grid children -
 /// only cards currently visible in the viewport are built and laid out.
 library;
 
@@ -39,7 +39,7 @@ class MediaGrid extends StatelessWidget {
   /// include the section header and the responsive grid itself.
   List<Widget> buildSlivers(BuildContext context) {
     return [
-      // â”€â”€ Section header â”€â”€
+      // Section header
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverToBoxAdapter(
@@ -70,7 +70,7 @@ class MediaGrid extends StatelessWidget {
 
       const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
-      // â”€â”€ Responsive sliver grid â”€â”€
+      // Responsive sliver grid
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverLayoutBuilder(
@@ -115,7 +115,7 @@ class MediaGrid extends StatelessWidget {
     ];
   }
 
-  /// Fallback [build] â€” kept so the widget can still be instantiated
+  /// Fallback [build] - kept so the widget can still be instantiated
   /// as a regular widget in tests or simple layouts.  Prefer [buildSlivers]
   /// for use inside a [CustomScrollView].
   @override

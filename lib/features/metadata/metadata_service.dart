@@ -1,6 +1,6 @@
-﻿/// Metadata orchestration service.
+/// Metadata orchestration service.
 ///
-/// Coordinates filename parsing â†’ TMDB search â†’ type resolution â†’ DB write.
+/// Coordinates filename parsing -> TMDB search -> type resolution -> DB write.
 /// Processes files sequentially with rate-limit awareness.
 ///
 /// For TV episodes, uses a three-step lookup:
@@ -85,7 +85,7 @@ class MetadataService {
     }
   }
 
-  // â”€â”€â”€ Movie metadata (existing logic, unchanged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Movie metadata (existing logic, unchanged)
 
   /// Fetch metadata for a movie file using multi-search.
   Future<void> _fetchMovieMetadata(MediaFile file, ParsedFilename parsed) async {
@@ -145,7 +145,7 @@ class MetadataService {
     );
   }
 
-  // â”€â”€â”€ TV metadata (new three-step lookup) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // TV metadata (new three-step lookup)
 
   /// Fetch metadata for a TV episode file.
   ///
@@ -159,7 +159,7 @@ class MetadataService {
     final seCode = 'S${season.toString().padLeft(2, '0')}'
         'E${episode.toString().padLeft(2, '0')}';
 
-    // â”€â”€ Step 1: Search for the TV series â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Step 1: Search for the TV series
 
     TmdbSearchResult? seriesResult;
     try {
@@ -201,7 +201,7 @@ class MetadataService {
     debugPrint('[MetadataService] TMDB series match: "${seriesResult.title}" '
         '(id: $seriesId)');
 
-    // â”€â”€ Step 2: Fetch episode details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Step 2: Fetch episode details
 
     TmdbEpisodeResult? episodeResult;
     try {
@@ -220,7 +220,7 @@ class MetadataService {
       // Continue with series-level data only
     }
 
-    // â”€â”€ Step 3: Fetch season poster as fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Step 3: Fetch season poster as fallback
 
     String? backdropPath = episodeResult?.stillPath;
 
@@ -239,19 +239,19 @@ class MetadataService {
       }
     }
 
-    // â”€â”€ Build display title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Build display title
 
     final episodeName = episodeResult?.name;
     final displayTitle = episodeName != null && episodeName.isNotEmpty
         ? '${seriesResult.title} - $seCode - $episodeName'
         : '${seriesResult.title} - $seCode';
 
-    // â”€â”€ Resolve type and genres â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Resolve type and genres
 
     final resolvedType = _resolveMediaType(seriesResult);
     final genreString = _client.resolveGenres(seriesResult.genreIds);
 
-    // â”€â”€ Write to database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Write to database
 
     await _db.updateMetadata(
       fileId: file.id,
@@ -271,7 +271,7 @@ class MetadataService {
         '"${episodeName ?? "unknown"}"');
   }
 
-  // â”€â”€â”€ Batch processing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Batch processing
 
   /// Fetch metadata for all unmatched files in the library.
   ///
@@ -301,7 +301,7 @@ class MetadataService {
           await _db.markAsUncategorized(unmatched[i].id);
         }
       } on TmdbAuthException {
-        // Invalid API key â€” stop the entire fetch
+        // Invalid API key - stop the entire fetch
         _emitStatus(MetadataFetchStatus(
           isFetching: false,
           totalFiles: unmatched.length,
@@ -312,7 +312,7 @@ class MetadataService {
       } catch (e) {
         debugPrint('[MetadataService] Error fetching metadata for '
             '"${unmatched[i].fileName}": $e');
-        // Network error or other â€” mark this file as uncategorized, continue
+        // Network error or other - mark this file as uncategorized, continue
         await _db.markAsUncategorized(unmatched[i].id);
         _emitStatus(_currentStatus.copyWith(
           errorMessage: 'Error fetching metadata: $e',

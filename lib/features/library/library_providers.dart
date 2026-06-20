@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/database/database.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/features/library/scanner_service.dart';
@@ -75,7 +75,7 @@ final recentlyAddedFilesProvider = StreamProvider<List<MediaFile>>((ref) {
   return db.watchRecentlyAdded(limit: 20);
 });
 
-// â”€â”€â”€ Continue Watching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Continue Watching
 
 /// Continue watching provider with TV series grouping.
 ///
@@ -190,7 +190,7 @@ final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
   return result;
 });
 
-/// A continue watching entry â€” pairs a specific [MediaFile] (the episode to
+/// A continue watching entry - pairs a specific [MediaFile] (the episode to
 /// resume) with an optional [SeriesItem] (non-null for TV/anime).
 class ContinueWatchingEntry {
   final MediaFile file;
@@ -207,7 +207,7 @@ class ContinueWatchingEntry {
   DateTime? get sortTime => overrideSortTime ?? file.lastWatchedAt;
 }
 
-// â”€â”€â”€ Grouped Series â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Grouped Series
 
 /// Groups all TV/anime files into [SeriesItem] objects for the library grids.
 final groupedSeriesProvider = Provider<List<SeriesItem>>((ref) {

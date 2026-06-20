@@ -1,6 +1,6 @@
-﻿/// Data model for a single media item displayed in the browse UI.
+/// Data model for a single media item displayed in the browse UI.
 ///
-/// In Phase 4, populated from SQLite with cached TMDB metadata.
+/// Populated from SQLite with cached TMDB metadata.
 /// Falls back to filename-based display when metadata is unavailable.
 library;
 
@@ -73,7 +73,7 @@ class MediaItem {
   /// Optional episode label (e.g. "S02E04") for continue watching cards.
   final String? episodeLabel;
 
-  /// Fraction watched, 0.0â€“1.0.
+  /// Fraction watched, 0.0-1.0.
   double get progress =>
       durationMinutes > 0 ? (watchedMinutes / durationMinutes).clamp(0, 1) : 0;
 

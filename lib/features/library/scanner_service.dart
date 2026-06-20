@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter_video/core/database/database.dart';
 import 'package:path/path.dart' as p;
 
@@ -49,14 +49,14 @@ class LibraryScannerService {
                 lastModified: stat.modified,
               );
             } catch (_) {
-              // Individual file stat/insert failed â€” skip this file but
+              // Individual file stat/insert failed - skip this file but
               // continue scanning the rest.
             }
           }
         }
       }
     } catch (_) {
-      // Directory listing failed (permission denied, etc.) â€” proceed to
+      // Directory listing failed (permission denied, etc.) - proceed to
       // cleanup with whatever was scanned so far.
     }
 
@@ -94,7 +94,7 @@ class LibraryScannerService {
     }
   }
 
-  /// Prunes all library folders â€” removes DB entries for files that no
+  /// Prunes all library folders - removes DB entries for files that no
   /// longer exist on disk. Much cheaper than [scanAllFolders] because it
   /// never writes unchanged rows (no stream spam).
   Future<void> pruneDeletedFiles() async {

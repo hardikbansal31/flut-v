@@ -1,4 +1,4 @@
-﻿/// A wider card with a progress bar for the "Continue Watching" row.
+/// A wider card with a progress bar for the "Continue Watching" row.
 ///
 /// Shows a TMDB backdrop/poster thumbnail when available, falling back to
 /// a gradient. Includes title, time remaining label, and a slim progress
@@ -80,7 +80,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // â”€â”€ Thumbnail image or gradient â”€â”€
+                // Thumbnail image or gradient
                 if (thumbnailUrl != null)
                   Builder(
                     builder: (context) {
@@ -98,10 +98,10 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                 else
                   _GradientThumbnail(colors: colors),
 
-                // â”€â”€ Darkening overlay â”€â”€
+                // Darkening overlay
                 Container(color: Colors.black.withValues(alpha: 0.25)),
 
-                // â”€â”€ Play icon centre â”€â”€
+                // Play icon centre
                 Center(
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 200),
@@ -125,7 +125,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   ),
                 ),
 
-                // â”€â”€ Bottom overlay: title + time remaining â”€â”€
+                // Bottom overlay: title + time remaining
                 Positioned(
                   left: 0,
                   right: 0,
@@ -178,7 +178,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   ),
                 ),
 
-                // â”€â”€ Progress bar at very bottom â”€â”€
+                // Progress bar at very bottom
                 Positioned(
                   left: 0,
                   right: 0,
@@ -195,7 +195,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   ),
                 ),
 
-                // â”€â”€ Hover border â”€â”€
+                // Hover border
                 if (_hovering)
                   Container(
                     decoration: BoxDecoration(

@@ -31,7 +31,7 @@ class _HeroBannerState extends State<HeroBanner> {
   late final PageController _pageController;
   Timer? _autoScrollTimer;
 
-  /// ValueNotifier for the current page index â€” drives only the indicator
+  /// ValueNotifier for the current page index - drives only the indicator
   /// row via [AnimatedBuilder], avoiding a full widget rebuild.
   late final ValueNotifier<int> _currentPage;
 
@@ -73,7 +73,7 @@ class _HeroBannerState extends State<HeroBanner> {
       height: bannerHeight,
       child: Stack(
         children: [
-          // â”€â”€ Page view of backdrop gradients â”€â”€
+          // Page view of backdrop gradients
           PageView.builder(
             controller: _pageController,
             itemCount: widget.items.length,
@@ -88,7 +88,7 @@ class _HeroBannerState extends State<HeroBanner> {
             },
           ),
 
-          // â”€â”€ Page indicators (rebuilt only when _currentPage changes) â”€â”€
+          // Page indicators (rebuilt only when _currentPage changes)
           Positioned(
             bottom: 24,
             left: 0,
@@ -123,7 +123,7 @@ class _HeroBannerState extends State<HeroBanner> {
   }
 }
 
-// â”€â”€â”€ Individual slide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Individual slide
 
 class _HeroBannerSlide extends StatelessWidget {
   const _HeroBannerSlide({required this.item, this.onPlay, this.onMoreInfo});
@@ -141,7 +141,7 @@ class _HeroBannerSlide extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // â”€â”€ Backdrop image or gradient â”€â”€
+        // Backdrop image or gradient
         if (hasBackdrop) ...[
           // Real TMDB backdrop image
           CachedNetworkImage(
@@ -173,7 +173,7 @@ class _HeroBannerSlide extends StatelessWidget {
         ],
 
 
-        // â”€â”€ Content overlay â”€â”€
+        // Content overlay
         Positioned(
           left: 32,
           right: 32,
@@ -217,7 +217,7 @@ class _HeroBannerSlide extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Year • Rating row
+              // Year - Rating row
               Row(
                 children: [
                   if (item.year != null)

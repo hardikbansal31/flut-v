@@ -1,14 +1,14 @@
-﻿/// Thin HTTP client for the TMDB (The Movie Database) API v3.
+/// Thin HTTP client for the TMDB (The Movie Database) API v3.
 ///
 /// All methods require a valid TMDB API key (v3 auth).
-/// Image base URLs are constants â€” use [posterUrl] and [backdropUrl]
+/// Image base URLs are constants - use [posterUrl] and [backdropUrl]
 /// helpers to build full image URLs from paths.
 library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-// â”€â”€â”€ Image URL constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Image URL constants
 
 /// Base URL for poster images (w500 = 500px wide, good for cards).
 const String kTmdbPosterBase = 'https://image.tmdb.org/t/p/w500';
@@ -22,7 +22,7 @@ String? posterUrl(String? path) => path != null ? '$kTmdbPosterBase$path' : null
 /// Build a full backdrop URL from a TMDB backdrop path.
 String? backdropUrl(String? path) => path != null ? '$kTmdbBackdropBase$path' : null;
 
-// â”€â”€â”€ Data classes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Data classes
 
 /// A search result from TMDB's multi-search endpoint.
 class TmdbSearchResult {
@@ -76,7 +76,7 @@ class TmdbSearchResult {
     );
   }
 
-  /// Extract year from release_date string (e.g. "2017-10-06" â†’ 2017).
+  /// Extract year from release_date string (e.g. "2017-10-06" -> 2017).
   int? get releaseYear {
     if (releaseDate == null || releaseDate!.length < 4) return null;
     return int.tryParse(releaseDate!.substring(0, 4));
@@ -109,7 +109,7 @@ class TmdbEpisodeResult {
     );
   }
 
-  /// Extract year from air_date string (e.g. "2017-10-06" â†’ 2017).
+  /// Extract year from air_date string (e.g. "2017-10-06" -> 2017).
   int? get airYear {
     if (airDate == null || airDate!.length < 4) return null;
     return int.tryParse(airDate!.substring(0, 4));
@@ -129,7 +129,7 @@ class TmdbSeasonResult {
   }
 }
 
-// â”€â”€â”€ Exception types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Exception types
 
 /// Thrown when the TMDB API returns a rate limit response (HTTP 429).
 class TmdbRateLimitException implements Exception {
@@ -156,9 +156,9 @@ class TmdbApiException implements Exception {
   String toString() => 'TMDB API error ($statusCode): $message';
 }
 
-// â”€â”€â”€ Genre map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Genre map
 
-/// TMDB genre IDs â†’ names. Combined movie + TV genres.
+/// TMDB genre IDs - names. Combined movie + TV genres.
 /// Hardcoded because these change extremely rarely.
 const Map<int, String> kTmdbGenres = {
   28: 'Action',
@@ -194,7 +194,7 @@ const Map<int, String> kTmdbGenres = {
 /// The TMDB genre ID for Animation.
 const int kAnimationGenreId = 16;
 
-// â”€â”€â”€ Client â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Client
 
 /// TMDB API v3 client.
 class TmdbClient {

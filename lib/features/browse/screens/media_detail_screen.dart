@@ -1,4 +1,4 @@
-﻿/// Series detail page showing all episodes grouped by season.
+/// Series detail page showing all episodes grouped by season.
 ///
 /// Displays a backdrop banner, series info (title, year, rating, genres,
 /// description), and episodes organised under "Season N" headers.
@@ -55,17 +55,17 @@ class MediaDetailScreen extends ConsumerWidget {
       backgroundColor: kBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // â”€â”€ Backdrop banner with back button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // Backdrop banner with back button
           SliverToBoxAdapter(
             child: _BackdropBanner(item: item),
           ),
 
-          // â”€â”€ Media info section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // Media info section
           SliverToBoxAdapter(
             child: _MediaInfoSection(item: item, series: currentSeries),
           ),
 
-          // â”€â”€ Content section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          // Content section
           if (isSeries)
             ...currentSeries.seasons.map((season) {
               return SliverMainAxisGroup(
@@ -199,7 +199,7 @@ class MediaDetailScreen extends ConsumerWidget {
   }
 }
 
-// â”€â”€â”€ Backdrop Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Backdrop Banner
 
 class _BackdropBanner extends StatelessWidget {
   const _BackdropBanner({required this.item});
@@ -214,7 +214,7 @@ class _BackdropBanner extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // â”€â”€ Background image â”€â”€
+          // Background image
           if (item.backdropUrl != null)
             CachedNetworkImage(
               imageUrl: item.backdropUrl!,
@@ -235,7 +235,7 @@ class _BackdropBanner extends StatelessWidget {
           else
             Container(color: kSurfaceColor),
 
-          // â”€â”€ Gradient overlays â”€â”€
+          // Gradient overlays
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -252,7 +252,7 @@ class _BackdropBanner extends StatelessWidget {
             ),
           ),
 
-          // â”€â”€ Back button â”€â”€
+          // Back button
           Positioned(
             top: MediaQuery.paddingOf(context).top + 8,
             left: 8,
@@ -278,7 +278,7 @@ class _BackdropBanner extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Series Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Series Info
 
 class _MediaInfoSection extends StatelessWidget {
   const _MediaInfoSection({required this.item, this.series});
@@ -292,7 +292,7 @@ class _MediaInfoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // â”€â”€ Title â”€â”€
+          // Title
           Text(
             item.title,
             style: AppTextStyles.seriesTitle,
@@ -300,7 +300,7 @@ class _MediaInfoSection extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // â”€â”€ Metadata row: year Â· rating Â· episode count / duration â”€â”€
+          // Metadata row: year - rating - episode count / duration
           Wrap(
             spacing: 12,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -340,7 +340,7 @@ class _MediaInfoSection extends StatelessWidget {
             ],
           ),
 
-          // â”€â”€ Genres â”€â”€
+          // Genres
           if (item.genres.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -368,7 +368,7 @@ class _MediaInfoSection extends StatelessWidget {
             ),
           ],
 
-          // â”€â”€ Overview â”€â”€
+          // Overview
           if (item.overview != null &&
               item.overview!.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -385,7 +385,7 @@ class _MediaInfoSection extends StatelessWidget {
   }
 }
 
-// â”€â”€â”€ Episode Tile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Episode Tile
 
 class _EpisodeTile extends StatefulWidget {
   const _EpisodeTile({required this.file, this.onTap, this.onMarkWatched, this.onMarkUnwatched});
@@ -445,7 +445,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
           ),
           child: Row(
             children: [
-              // â”€â”€ Episode still image â”€â”€
+              // Episode still image
               ClipRRect(
                 borderRadius:
                     const BorderRadius.horizontal(left: Radius.circular(8)),
@@ -507,7 +507,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                 ),
               ),
 
-              // â”€â”€ Episode info â”€â”€
+              // Episode info
               Expanded(
                 child: Padding(
                   padding:
@@ -569,7 +569,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                 ),
               ),
 
-              // â”€â”€ Watched Toggle â”€â”€
+              // Watched Toggle
               if (_hovering || isFullyWatched)
                 IconButton(
                   icon: Icon(
@@ -582,7 +582,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
               else
                 const SizedBox(width: 48),
 
-              // â”€â”€ Chevron â”€â”€
+              // Chevron
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Icon(

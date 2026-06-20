@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -55,7 +55,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   }
 
   Future<void> _initPlayer() async {
-    // â”€â”€ Guard: verify the file still exists on disk â”€â”€
+    // Guard: verify the file still exists on disk
     final file = File(widget.mediaFile.filePath);
     if (!await file.exists()) {
       // Remove the stale entry from the database.
@@ -75,14 +75,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
     final initialPosition = widget.mediaFile.positionMillis ?? 0;
 
-    // â”€â”€ Subtitle configuration (mpv properties via NativePlayer) â”€â”€
-    // â€¢ sub-ass-override=no  â†’ honour styles baked into ASS/SSA tracks.
-    // â€¢ The sub-font / sub-border-size / sub-margin-y values are the
+    // Subtitle configuration (mpv properties via NativePlayer)
+    // - sub-ass-override=no -> honour styles baked into ASS/SSA tracks.
+    // - The sub-font / sub-border-size / sub-margin-y values are the
     //   fallback style used when a track has NO embedded styling (e.g.
     //   plain SRT).  They do NOT override ASS styles.
     //
     // NOTE: sub-font-size is in mpv's normalised units (scaled to 720px
-    // window height), NOT physical pixels.  Do NOT multiply by DPR â€”
+    // window height), NOT physical pixels.  Do NOT multiply by DPR -
     // the DPR fix is handled by resizing the render texture below.
     if (player.platform is NativePlayer) {
       final native = player.platform as NativePlayer;
@@ -130,18 +130,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             .timeout(const Duration(seconds: 10));
         await player.seek(Duration(milliseconds: initialPosition));
       } catch (_) {
-        // Duration never reached a valid value â€” skip seeking.
+        // Duration never reached a valid value - skip seeking.
       }
     }
 
     await player.play();
 
-    // â”€â”€ HiDPI fix: resize the mpv render texture to physical pixels â”€â”€
+    // HiDPI fix: resize the mpv render texture to physical pixels
     //
     // By default media_kit creates the texture at the video's native
-    // resolution (e.g. 1280Ã—720 for a 720p file).  mpv + libass render
+    // resolution (e.g. 1280x720 for a 720p file).  mpv + libass render
     // subtitles into that texture.  At fractional OS scaling (e.g. 125%)
-    // the texture is upscaled by the compositor â†’ blurry subtitles.
+    // the texture is upscaled by the compositor -> blurry subtitles.
     //
     // Haruna doesn't have this problem because mpv renders directly to
     // the native window at the screen's physical pixel resolution.
@@ -303,10 +303,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           ),
           child: Video(
             controller: controller,
-            // Bicubic interpolation â€” much sharper than the default bilinear
+            // Bicubic interpolation - much sharper than the default bilinear
             // when there's any non-integer scaling (e.g. 125% OS scaling).
             filterQuality: FilterQuality.high,
-            // Flutter-side fallback style â€” only applies when libass is
+            // Flutter-side fallback style - only applies when libass is
             // NOT handling rendering (rare).  Matches the mpv fallback:
             // Arial, 3 pt uniform border, positioned near the bottom.
             subtitleViewConfiguration: SubtitleViewConfiguration(
