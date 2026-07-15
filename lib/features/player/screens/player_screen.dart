@@ -12,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
+import 'package:flutter_video/app.dart';
 
 
 /// Fullscreen player screen using media_kit and window_manager.
@@ -53,6 +54,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     super.initState();
     _initPlayer();
     _enterFullscreen();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(saveStateProvider.notifier).setCallback(_saveWatchProgress);
+    });
   }
 
   Future<void> _initPlayer() async {
@@ -298,6 +302,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(saveStateProvider.notifier).setCallback(null);
+    });
+    
     _positionSub?.cancel();
     _durationSub?.cancel();
     _playingSub?.cancel();
@@ -342,8 +350,60 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         await _saveWatchProgress();
         if (context.mounted) Navigator.of(context).pop();
       },
-      child: Scaffold(
-        backgroundColor: Colors.black,
+      child: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            final key = event.logicalKey;
+            
+            if (key == LogicalKeyboardKey.keyP || key == LogicalKeyboardKey.space) {
+              player.playOrPause();
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.keyM) {
+              player.setVolume(player.state.volume == 0 ? 100.0 : 0.0);
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.keyC) {
+              final tracks = player.state.tracks.subtitle;
+              final current = player.state.track.subtitle;
+              if (tracks.length > 1) {
+                final currentIndex = tracks.indexOf(current);
+                final nextIndex = (currentIndex + 1) % tracks.length;
+                player.setSubtitleTrack(tracks[nextIndex]);
+              }
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.arrowLeft) {
+              final pos = player.state.position - const Duration(seconds: 10);
+              player.seek(pos < Duration.zero ? Duration.zero : pos);
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.arrowRight) {
+              final pos = player.state.position + const Duration(seconds: 10);
+              player.seek(pos > player.state.duration ? player.state.duration : pos);
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.arrowUp) {
+              final vol = (player.state.volume + 10.0).clamp(0.0, 100.0);
+              player.setVolume(vol);
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.arrowDown) {
+              final vol = (player.state.volume - 10.0).clamp(0.0, 100.0);
+              player.setVolume(vol);
+              return KeyEventResult.handled;
+            }
+            
+            // Number keys 0-9 for seeking
+            final label = key.keyLabel;
+            if (label.length == 1) {
+              final digit = int.tryParse(label);
+              if (digit != null) {
+                final pos = player.state.duration * (digit / 10.0);
+                player.seek(pos);
+                return KeyEventResult.handled;
+              }
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
         body: MaterialDesktopVideoControlsTheme(
         normal: MaterialDesktopVideoControlsThemeData(
           hideMouseOnControlsRemoval: true,
@@ -444,6 +504,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               ),
               padding: const EdgeInsets.only(bottom: 22.0),
             ),
+          ),
           ),
         ),
       ),
