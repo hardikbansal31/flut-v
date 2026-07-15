@@ -109,7 +109,7 @@ class _HeroBannerState extends State<HeroBanner> {
                         borderRadius: BorderRadius.circular(2),
                         color: isActive
                             ? kAccentColor
-                            : Colors.white.withValues(alpha: 0.3),
+                            : AppTheme.textPrimary.withValues(alpha: 0.3),
                       ),
                     );
                   },
@@ -159,8 +159,8 @@ class _HeroBannerSlide extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.3),
-                  Colors.black.withValues(alpha: 0.5),
+                  AppTheme.backgroundBlack.withValues(alpha: 0.3),
+                  AppTheme.backgroundBlack.withValues(alpha: 0.5),
                   kBackgroundColor,
                 ],
                 stops: const [0.0, 0.5, 1.0],
@@ -191,10 +191,10 @@ class _HeroBannerSlide extends StatelessWidget {
                       padding:
                           const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: AppTheme.textPrimary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: AppTheme.textPrimary.withValues(alpha: 0.15),
                         ),
                       ),
                       child: Text(
@@ -297,7 +297,7 @@ class _HeroBannerSlide extends StatelessWidget {
                     label: const Text('Play'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kAccentColor,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppTheme.textPrimary,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -313,9 +313,9 @@ class _HeroBannerSlide extends StatelessWidget {
                     icon: Icon(PhosphorIcons.info, size: 20),
                     label: const Text('More Info'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
+                      foregroundColor: AppTheme.textSecondary,
                       side:
-                          BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                          BorderSide(color: AppTheme.textPrimary.withValues(alpha: 0.2)),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(

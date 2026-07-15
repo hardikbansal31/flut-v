@@ -145,6 +145,22 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Bulk upsert multiple media files using a single batch transaction.
+  Future<void> upsertMediaFilesBatch(List<MediaFilesCompanion> companions) async {
+    await batch((b) {
+      for (final companion in companions) {
+        b.insert(
+          mediaFiles,
+          companion,
+          onConflict: DoUpdate(
+            (old) => companion,
+            target: [mediaFiles.filePath],
+          ),
+        );
+      }
+    });
+  }
+
   /// Updates the watch progress for a specific file.
   ///
   /// Also stamps [lastWatchedAt] so the Continue Watching section can
@@ -164,25 +180,12 @@ class AppDatabase extends _$AppDatabase {
   Future<void> markAsWatched(List<int> fileIds) async {
     if (fileIds.isEmpty) return;
     
-    await transaction(() async {
-      for (final id in fileIds) {
-        final query = select(mediaFiles)..where((t) => t.id.equals(id));
-        final file = await query.getSingleOrNull();
-        if (file == null) continue;
-        
-        final duration = (file.durationMillis == null || file.durationMillis == 0) 
-            ? 1 
-            : file.durationMillis!;
-            
-        await (update(mediaFiles)..where((t) => t.id.equals(id))).write(
-          MediaFilesCompanion(
-            positionMillis: Value(duration),
-            durationMillis: Value(duration),
-            lastWatchedAt: Value(DateTime.now()),
-          ),
-        );
-      }
-    });
+    await (update(mediaFiles)..where((t) => t.id.isIn(fileIds))).write(
+      MediaFilesCompanion.custom(
+        positionMillis: const CustomExpression('CASE WHEN duration_millis IS NULL OR duration_millis = 0 THEN 1 ELSE duration_millis END'),
+        lastWatchedAt: Variable(DateTime.now()),
+      ),
+    );
   }
 
   /// Batch marks a list of files as unwatched.

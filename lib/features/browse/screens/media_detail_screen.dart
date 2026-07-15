@@ -28,7 +28,7 @@ class MediaDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allFiles = ref.watch(allMediaFilesProvider).value ?? [];
+    final allFiles = ref.watch(libraryFilesProvider).value ?? [];
     final allSeries = ref.watch(groupedSeriesProvider);
 
     SeriesItem? currentSeries;
@@ -76,7 +76,7 @@ class MediaDetailScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
                       child: Text(
                         'Season $season',
-                        style: AppTextStyles.sectionSubHeader.copyWith(color: Colors.white),
+                        style: AppTextStyles.sectionSubHeader.copyWith(color: AppTheme.textPrimary),
                       ),
                     ),
                   ),
@@ -145,7 +145,7 @@ class MediaDetailScreen extends ConsumerWidget {
                         label: const Text('Play'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kAccentColor,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppTheme.textPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -175,11 +175,11 @@ class MediaDetailScreen extends ConsumerWidget {
                           label: Text(isFullyWatched ? 'Unwatched' : 'Watched'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isFullyWatched ? kSurfaceColor : kCardColor,
-                            foregroundColor: isFullyWatched ? kMutedText : Colors.white,
+                            foregroundColor: isFullyWatched ? kMutedText : AppTheme.textPrimary,
                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: isFullyWatched ? kDivider : Colors.transparent),
+                              side: BorderSide(color: isFullyWatched ? kDivider : AppTheme.transparent),
                             ),
                             textStyle: AppTextStyles.buttonText.copyWith(fontSize: 16),
                           ),
@@ -242,8 +242,8 @@ class _BackdropBanner extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.3),
-                  Colors.transparent,
+                  AppTheme.backgroundBlack.withValues(alpha: 0.3),
+                  AppTheme.transparent,
                   kBackgroundColor.withValues(alpha: 0.8),
                   kBackgroundColor,
                 ],
@@ -260,12 +260,12 @@ class _BackdropBanner extends StatelessWidget {
               icon: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: AppTheme.backgroundBlack.withValues(alpha: 0.4),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   PhosphorIcons.arrowLeft,
-                  color: Colors.white,
+                  color: AppTheme.textPrimary,
                   size: 22,
                 ),
               ),
@@ -440,7 +440,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
             border: Border.all(
               color: _hovering
                   ? kAccentColor.withValues(alpha: 0.3)
-                  : Colors.transparent,
+                  : AppTheme.transparent,
             ),
           ),
           child: Row(
@@ -478,10 +478,10 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                       // Play overlay on hover
                       if (_hovering)
                         Container(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: AppTheme.backgroundBlack.withValues(alpha: 0.4),
                           child: Center(
                             child: Icon(PhosphorIcons.playCircleFill,
-                                size: 36, color: Colors.white),
+                                size: 36, color: AppTheme.textPrimary),
                           ),
                         ),
 
@@ -588,7 +588,7 @@ class _EpisodeTileState extends State<_EpisodeTile> {
                 child: Icon(
                   PhosphorIcons.playFill,
                   color: _hovering
-                      ? Colors.white
+                      ? AppTheme.textPrimary
                       : kMutedText.withValues(alpha: 0.5),
                   size: 22,
                 ),

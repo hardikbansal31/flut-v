@@ -3,6 +3,7 @@ import 'package:flutter_video/core/database/database.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
 import 'package:flutter_video/features/library/scanner_service.dart';
 import 'package:flutter_video/features/library/watcher_service.dart';
+import 'package:flutter_video/features/browse/models/media_item.dart';
 
 // Provides the singleton instance of the database
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -65,10 +66,49 @@ final libraryFoldersProvider = StreamProvider<List<LibraryFolder>>((ref) {
   return db.watchAllLibraryFolders();
 });
 
-final allMediaFilesProvider = StreamProvider<List<MediaFile>>((ref) {
+final _allMediaFilesStreamProvider = StreamProvider<List<MediaFile>>((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchAllMediaFiles();
 });
+
+class _StructuralList {
+  final List<MediaFile> files;
+  _StructuralList(this.files);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _StructuralList) return false;
+    if (files.length != other.files.length) return false;
+    for (int i = 0; i < files.length; i++) {
+      final a = files[i];
+      final b = other.files[i];
+      if (a.id != b.id || a.tmdbId != b.tmdbId || a.filePath != b.filePath) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => files.length.hashCode;
+}
+
+/// Emits only when structural changes happen (files added/removed/metadata matched)
+final libraryFilesProvider = Provider<AsyncValue<List<MediaFile>>>((ref) {
+  final structList = ref.watch(_allMediaFilesStreamProvider.select((asyncValue) {
+    return asyncValue.whenData((files) => _StructuralList(files));
+  }));
+  return structList.whenData((s) => s.files);
+});
+
+/// Narrowly-scoped stream that emits whenever watch progress changes.
+final watchProgressProvider = Provider<AsyncValue<List<MediaFile>>>((ref) {
+  return ref.watch(_allMediaFilesStreamProvider);
+});
+
+// Deprecated: use libraryFilesProvider or watchProgressProvider instead
+final allMediaFilesProvider = libraryFilesProvider;
 
 final recentlyAddedFilesProvider = StreamProvider<List<MediaFile>>((ref) {
   final db = ref.watch(databaseProvider);
@@ -88,7 +128,7 @@ final recentlyAddedFilesProvider = StreamProvider<List<MediaFile>>((ref) {
 /// Returns a record of (MediaFile file, SeriesItem? series) pairs so the UI
 /// can build the right card and navigate to the right destination.
 final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
-  final allFiles = ref.watch(allMediaFilesProvider).value ?? [];
+  final allFiles = ref.watch(watchProgressProvider).value ?? [];
 
   final result = <ContinueWatchingEntry>[];
 
@@ -211,7 +251,7 @@ class ContinueWatchingEntry {
 
 /// Groups all TV/anime files into [SeriesItem] objects for the library grids.
 final groupedSeriesProvider = Provider<List<SeriesItem>>((ref) {
-  final allFiles = ref.watch(allMediaFilesProvider).value ?? [];
+  final allFiles = ref.watch(libraryFilesProvider).value ?? [];
   final tvAnimeFiles = allFiles.where((f) {
     final type = f.mediaType;
     return type == 'tv' || type == 'anime';
@@ -224,4 +264,25 @@ final groupedSeriesProvider = Provider<List<SeriesItem>>((ref) {
 // Any code still using it will continue to work.
 final continueWatchingFilesProvider = Provider<List<MediaFile>>((ref) {
   return ref.watch(continueWatchingProvider).map((e) => e.file).toList();
+});
+
+// Derived Category Providers
+final movieFilesProvider = Provider<List<MediaItem>>((ref) {
+  final files = ref.watch(libraryFilesProvider).value ?? [];
+  return files.map(MediaItem.fromMediaFile).where((item) => item.type == MediaType.movie).toList();
+});
+
+final tvSeriesProvider = Provider<List<MediaItem>>((ref) {
+  final series = ref.watch(groupedSeriesProvider);
+  return series.where((s) => s.type == MediaType.tvShow).map(MediaItem.fromSeriesItem).toList();
+});
+
+final animeSeriesProvider = Provider<List<MediaItem>>((ref) {
+  final series = ref.watch(groupedSeriesProvider);
+  return series.where((s) => s.type == MediaType.anime).map(MediaItem.fromSeriesItem).toList();
+});
+
+final uncategorizedFilesProvider = Provider<List<MediaItem>>((ref) {
+  final files = ref.watch(libraryFilesProvider).value ?? [];
+  return files.map(MediaItem.fromMediaFile).where((item) => item.type == MediaType.uncategorized).toList();
 });

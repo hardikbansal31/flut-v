@@ -1,4 +1,4 @@
-﻿// GENERATED CODE - DO NOT MODIFY BY HAND
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'database.dart';
 
@@ -878,10 +878,10 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
   /// Last-modified time from the filesystem.
   final DateTime lastModified;
 
-  /// Total duration of the media in milliseconds (Phase 3).
+  /// Total duration of the media in milliseconds.
   final int? durationMillis;
 
-  /// Last watched position in milliseconds (Phase 3).
+  /// Last watched position in milliseconds.
   final int? positionMillis;
 
   /// Timestamp of the last time the user watched this file.
@@ -910,7 +910,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
   /// Release year extracted from TMDB release_date / first_air_date.
   final int? releaseYear;
 
-  /// TMDB vote average (0.0â€“10.0).
+  /// TMDB vote average (0.0-10.0).
   final double? voteAverage;
 
   /// Comma-separated genre names (e.g. "Action,Sci-Fi,Drama").
@@ -1557,6 +1557,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $LibraryFoldersTable libraryFolders = $LibraryFoldersTable(this);
   late final $MediaFilesTable mediaFiles = $MediaFilesTable(this);
+  late final Index idxMediaFolder = Index(
+    'idx_media_folder',
+    'CREATE INDEX idx_media_folder ON media_files (library_folder_id)',
+  );
+  late final Index idxMediaFilepath = Index(
+    'idx_media_filepath',
+    'CREATE INDEX idx_media_filepath ON media_files (file_path)',
+  );
+  late final Index idxMediaTmdb = Index(
+    'idx_media_tmdb',
+    'CREATE INDEX idx_media_tmdb ON media_files (tmdb_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1564,6 +1576,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     libraryFolders,
     mediaFiles,
+    idxMediaFolder,
+    idxMediaFilepath,
+    idxMediaTmdb,
   ];
 }
 

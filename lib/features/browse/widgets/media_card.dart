@@ -141,7 +141,7 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: AppTheme.backgroundBlack.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )
@@ -154,12 +154,12 @@ class _HoverScaleWrapperState extends State<_HoverScaleWrapper> {
               if (_hovering)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: AppTheme.backgroundBlack.withValues(alpha: 0.3),
                     child: Center(
                       child: Icon(
                         PhosphorIcons.playCircleFill,
                         size: 48,
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                   ),
@@ -195,7 +195,7 @@ class _GradientPlaceholder extends StatelessWidget {
           ),
         ),
         // Film-grain style noise overlay
-        Container(color: Colors.black.withValues(alpha: 0.15)),
+        Container(color: AppTheme.backgroundBlack.withValues(alpha: 0.15)),
         // Icon watermark
         Center(
           child: Icon(
@@ -205,7 +205,7 @@ class _GradientPlaceholder extends StatelessWidget {
                     ? PhosphorIcons.filmStrip
                     : PhosphorIcons.filmSlate,
             size: 40,
-            color: Colors.white.withValues(alpha: 0.15),
+            color: AppTheme.textPrimary.withValues(alpha: 0.15),
           ),
         ),
       ],

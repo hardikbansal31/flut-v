@@ -184,7 +184,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                 hintText: 'Paste your TMDB API key here',
                 border: const OutlineInputBorder(),
                 filled: true,
-                fillColor: Colors.black26,
+                fillColor: AppTheme.backgroundBlack26,
                 suffixIcon: IconButton(
                   icon: Icon(
                     _apiKeyObscured
@@ -205,7 +205,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                 hintText: 'Default: https://api.themoviedb.org/3',
                 border: OutlineInputBorder(),
                 filled: true,
-                fillColor: Colors.black26,
+                fillColor: AppTheme.backgroundBlack26,
               ),
             ),
             const SizedBox(height: 16),
@@ -216,7 +216,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   icon: Icon(PhosphorIcons.floppyDisk, size: 18),
                   label: const Text('Save Settings'),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppTheme.textPrimary,
                     backgroundColor: kAccentColor,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 16),
@@ -236,8 +236,8 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                       ? 'Fetching... ${fetchStatus.remainingFiles} remaining'
                       : 'Fetch Metadata'),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white12,
+                    foregroundColor: AppTheme.textPrimary,
+                    backgroundColor: AppTheme.textPrimary12,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),
@@ -248,8 +248,8 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   icon: Icon(PhosphorIcons.arrowsClockwise, size: 18),
                   label: const Text('Refresh All'),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white12,
+                    foregroundColor: AppTheme.textPrimary,
+                    backgroundColor: AppTheme.textPrimary12,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),
@@ -276,7 +276,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                       hintText: '/home/user/Videos',
                       border: OutlineInputBorder(),
                       filled: true,
-                      fillColor: Colors.black26,
+                      fillColor: AppTheme.backgroundBlack26,
                     ),
                   ),
                 ),
@@ -286,7 +286,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                   icon: Icon(PhosphorIcons.plus),
                   label: const Text('Add Folder'),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppTheme.textPrimary,
                     backgroundColor: kAccentColor,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
@@ -308,8 +308,8 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                       : Icon(PhosphorIcons.arrowsClockwise),
                   label: const Text('Rescan All'),
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white12,
+                    foregroundColor: AppTheme.textPrimary,
+                    backgroundColor: AppTheme.textPrimary12,
                   ),
                 ),
               ],
@@ -329,14 +329,14 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                     itemBuilder: (context, index) {
                       final folder = folders[index];
                       return Card(
-                        color: Colors.white10,
+                        color: AppTheme.textPrimary10,
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           leading: Icon(PhosphorIcons.folder, color: kAccentColor),
                           title: Text(folder.label ?? folder.path),
                           subtitle: Text(folder.path),
                           trailing: IconButton(
-                            icon: Icon(PhosphorIcons.trash, color: Colors.redAccent),
+                            icon: Icon(PhosphorIcons.trash, color: AppTheme.errorSnackbar),
                             onPressed: () => _removeFolder(folder.id),
                             tooltip: 'Remove folder',
                           ),

@@ -99,7 +99,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                   _GradientThumbnail(colors: colors),
 
                 // Darkening overlay
-                Container(color: Colors.black.withValues(alpha: 0.25)),
+                Container(color: AppTheme.backgroundBlack.withValues(alpha: 0.25)),
 
                 // Play icon centre
                 Center(
@@ -111,14 +111,14 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                       height: 44,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: AppTheme.backgroundBlack.withValues(alpha: 0.5),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
+                          color: AppTheme.textPrimary.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Icon(
                         PhosphorIcons.playFill,
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         size: 28,
                       ),
                     ),
@@ -138,8 +138,8 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.9),
+                          AppTheme.transparent,
+                          AppTheme.backgroundBlack.withValues(alpha: 0.9),
                         ],
                       ),
                     ),
@@ -162,7 +162,7 @@ class _ContinueWatchingCardState extends State<ContinueWatchingCard> {
                                 item.episodeLabel!,
                                 style: AppTextStyles.continueWatchingTitle.copyWith(
                                   fontSize: 12,
-                                  color: Colors.white70,
+                                  color: AppTheme.textSecondary,
                                 ),
                               ),
                             ],

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
@@ -15,7 +15,7 @@ class CategoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allMediaFilesAsync = ref.watch(allMediaFilesProvider);
+    final allMediaFilesAsync = ref.watch(libraryFilesProvider);
     final files = allMediaFilesAsync.value ?? [];
     
     final allSeries = ref.watch(groupedSeriesProvider);
@@ -62,7 +62,7 @@ class CategoryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
-        title: Text(title, style: AppTextStyles.brandTitle.copyWith(fontSize: 24, color: Colors.white)),
+        title: Text(title, style: AppTextStyles.brandTitle.copyWith(fontSize: 24, color: AppTheme.textPrimary)),
         backgroundColor: kBackgroundColor,
         elevation: 0,
         leading: IconButton(

@@ -49,13 +49,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   int _currentDuration = 0;
   bool _isPlaying = true;
 
+  late final AppDatabase _db;
+  late final SaveStateNotifier _saveStateNotifier;
+
   @override
   void initState() {
     super.initState();
+    _db = ref.read(databaseProvider);
+    _saveStateNotifier = ref.read(saveStateProvider.notifier);
     _initPlayer();
     _enterFullscreen();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(saveStateProvider.notifier).setCallback(_saveWatchProgress);
+      _saveStateNotifier.setCallback(_saveWatchProgress);
     });
   }
 
@@ -64,8 +69,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final file = File(widget.mediaFile.filePath);
     if (!await file.exists()) {
       // Remove the stale entry from the database.
-      final db = ref.read(databaseProvider);
-      await db.removeMediaFileByPath(widget.mediaFile.filePath);
+      await _db.removeMediaFileByPath(widget.mediaFile.filePath);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -206,7 +210,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     trackName,
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : AppTheme.textPrimary,
                     ),
                   ),
                   trailing: isSelected ? Icon(PhosphorIcons.check, color: Theme.of(context).colorScheme.primary) : null,
@@ -264,7 +268,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     trackName,
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : AppTheme.textPrimary,
                     ),
                   ),
                   trailing: isSelected ? Icon(PhosphorIcons.check, color: Theme.of(context).colorScheme.primary) : null,
@@ -295,15 +299,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     // If stream emitted 0 right before closing, use the highest cached position
     final positionToSave = _currentPosition > 0 ? _currentPosition : _maxValidPosition;
     if (positionToSave > 0 && _currentDuration > 0) {
-      final db = ref.read(databaseProvider);
-      await db.updateWatchProgress(widget.mediaFile.id, positionToSave, _currentDuration);
+      await _db.updateWatchProgress(widget.mediaFile.id, positionToSave, _currentDuration);
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(saveStateProvider.notifier).setCallback(null);
+      _saveStateNotifier.setCallback(null);
     });
     
     _positionSub?.cancel();
@@ -328,16 +331,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(showName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(showName, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
           if (subTitle.isNotEmpty)
-            Text(subTitle, style: TextStyle(color: Colors.white.withAlpha(179), fontSize: 13)),
+            Text(subTitle, style: TextStyle(color: AppTheme.textPrimary.withAlpha(179), fontSize: 13)),
         ],
       );
     }
 
     return Text(
       file.tmdbTitle ?? file.fileName,
-      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+      style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
     );
   }
 
@@ -347,8 +350,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+        final nav = Navigator.of(context);
         await _saveWatchProgress();
-        if (context.mounted) Navigator.of(context).pop();
+        if (mounted) nav.pop();
       },
       child: Focus(
         autofocus: true,
@@ -403,21 +407,21 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           return KeyEventResult.ignored;
         },
         child: Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.backgroundBlack,
         body: MaterialDesktopVideoControlsTheme(
         normal: MaterialDesktopVideoControlsThemeData(
           hideMouseOnControlsRemoval: true,
           topButtonBar: [
-            const BackButton(color: Colors.white),
+            const BackButton(color: AppTheme.textPrimary),
             const SizedBox(width: 8),
             _buildTitle(),
             const Spacer(),
             IconButton(
-              icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+              icon: Icon(PhosphorIcons.speakerHigh, color: AppTheme.textPrimary),
               onPressed: _showAudioDialog,
             ),
             IconButton(
-              icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
+              icon: Icon(PhosphorIcons.subtitles, color: AppTheme.textPrimary),
               onPressed: _showSubtitleDialog,
             ),
           ],
@@ -425,16 +429,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         fullscreen: MaterialDesktopVideoControlsThemeData(
           hideMouseOnControlsRemoval: true,
           topButtonBar: [
-            const BackButton(color: Colors.white),
+            const BackButton(color: AppTheme.textPrimary),
             const SizedBox(width: 8),
             _buildTitle(),
             const Spacer(),
             IconButton(
-              icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+              icon: Icon(PhosphorIcons.speakerHigh, color: AppTheme.textPrimary),
               onPressed: _showAudioDialog,
             ),
             IconButton(
-              icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
+              icon: Icon(PhosphorIcons.subtitles, color: AppTheme.textPrimary),
               onPressed: _showSubtitleDialog,
             ),
           ],
@@ -442,32 +446,32 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         child: MaterialVideoControlsTheme(
           normal: MaterialVideoControlsThemeData(
             topButtonBar: [
-              const BackButton(color: Colors.white),
+              const BackButton(color: AppTheme.textPrimary),
               const SizedBox(width: 8),
               _buildTitle(),
               const Spacer(),
               IconButton(
-                icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+                icon: Icon(PhosphorIcons.speakerHigh, color: AppTheme.textPrimary),
                 onPressed: _showAudioDialog,
               ),
               IconButton(
-                icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
+                icon: Icon(PhosphorIcons.subtitles, color: AppTheme.textPrimary),
                 onPressed: _showSubtitleDialog,
               ),
             ],
           ),
           fullscreen: MaterialVideoControlsThemeData(
             topButtonBar: [
-              const BackButton(color: Colors.white),
+              const BackButton(color: AppTheme.textPrimary),
               const SizedBox(width: 8),
               _buildTitle(),
               const Spacer(),
               IconButton(
-                icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+                icon: Icon(PhosphorIcons.speakerHigh, color: AppTheme.textPrimary),
                 onPressed: _showAudioDialog,
               ),
               IconButton(
-                icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
+                icon: Icon(PhosphorIcons.subtitles, color: AppTheme.textPrimary),
                 onPressed: _showSubtitleDialog,
               ),
             ],
@@ -487,19 +491,19 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 fontFamily: 'Arial',
                 letterSpacing: 0.0,
                 wordSpacing: 0.0,
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontWeight: FontWeight.normal,
-                backgroundColor: Colors.transparent,
+                backgroundColor: AppTheme.transparent,
                 shadows: [
                   // Simulates a uniform 4 px border with 8-directional shadows.
-                  Shadow(offset: Offset(4.0, 0.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(-4.0, 0.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(0.0, 4.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(0.0, -4.0), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(2.8, 2.8), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(-2.8, 2.8), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(2.8, -2.8), blurRadius: 0.0, color: Colors.black),
-                  Shadow(offset: Offset(-2.8, -2.8), blurRadius: 0.0, color: Colors.black),
+                  Shadow(offset: Offset(4.0, 0.0), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(-4.0, 0.0), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(0.0, 4.0), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(0.0, -4.0), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(2.8, 2.8), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(-2.8, 2.8), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(2.8, -2.8), blurRadius: 0.0, color: AppTheme.backgroundBlack),
+                  Shadow(offset: Offset(-2.8, -2.8), blurRadius: 0.0, color: AppTheme.backgroundBlack),
                 ],
               ),
               padding: const EdgeInsets.only(bottom: 22.0),

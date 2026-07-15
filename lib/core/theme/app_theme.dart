@@ -44,10 +44,29 @@ class AppTheme {
   static const Color accent = kAccentColor;
   static const Color secondaryAccent = kSecondaryAccent;
   static const Color progressFill = kProgressFill;
-  static const Color errorSnackbar = Color(0xFFB71C1C); // Colors.red[800]
-  static const Color cardShadow = Colors.black;
+  static const Color progressTrack = kProgressTrack;
+  
+  // Standardized palette
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Colors.white70;
+  static const Color textHint = Colors.white54;
+  
+  static const Color backgroundBlack = Colors.black;
+  static const Color surface = kSurfaceColor;
+  static const Color card = kCardColor;
+  static const Color transparent = Colors.transparent;
+  
+  static const Color errorSnackbar = Color(0xFFB71C1C);
+  static const Color shadow = Colors.black;
   static const Color scaffoldBackground = Colors.black;
   static const Color subtitlesDialogBackground = Color(0xFF212121);
+  
+  // Specific opacity fallbacks generated during refactor
+  static const Color backgroundBlack26 = Colors.black26;
+  static const Color textPrimary10 = Colors.white10;
+  static const Color textPrimary12 = Colors.white12;
+  static const Color textPrimary24 = Colors.white24;
+  static const Color textPrimary38 = Colors.white38;
 }
 
 class AppTextStyles {

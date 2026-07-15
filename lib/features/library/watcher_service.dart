@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_video/core/database/database.dart';
 import 'package:path/path.dart' as p;
@@ -15,6 +15,16 @@ class LibraryWatcherService {
     '.m4v', '.ts', '.mpg', '.mpeg', '.3gp', '.ogv'
   };
 
+  final Map<String, Timer> _debouncers = {};
+
+  void _debounceEvent(String path, void Function() action) {
+    _debouncers[path]?.cancel();
+    _debouncers[path] = Timer(const Duration(milliseconds: 500), () {
+      action();
+      _debouncers.remove(path);
+    });
+  }
+
   void watchFolder(LibraryFolder folder) {
     if (_subscriptions.containsKey(folder.id)) return;
 
@@ -27,20 +37,24 @@ class LibraryWatcherService {
       if (!_supportedExtensions.contains(ext)) return;
 
       if (event.type == ChangeType.REMOVE) {
+        _debouncers[event.path]?.cancel();
+        _debouncers.remove(event.path);
         await _db.removeMediaFileByPath(event.path);
       } else if (event.type == ChangeType.ADD || event.type == ChangeType.MODIFY) {
-        final file = File(event.path);
-        if (await file.exists()) {
-          final stat = await file.stat();
-          await _db.upsertMediaFile(
-            filePath: event.path,
-            fileName: p.basenameWithoutExtension(event.path),
-            fileExtension: ext.substring(1),
-            fileSizeBytes: stat.size,
-            libraryFolderId: folder.id,
-            lastModified: stat.modified,
-          );
-        }
+        _debounceEvent(event.path, () async {
+          final file = File(event.path);
+          if (await file.exists()) {
+            final stat = await file.stat();
+            await _db.upsertMediaFile(
+              filePath: event.path,
+              fileName: p.basenameWithoutExtension(event.path),
+              fileExtension: ext.substring(1),
+              fileSizeBytes: stat.size,
+              libraryFolderId: folder.id,
+              lastModified: stat.modified,
+            );
+          }
+        });
       }
     });
   }

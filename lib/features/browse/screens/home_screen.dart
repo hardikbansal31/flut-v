@@ -141,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 // Hero Banner Section
 
-/// Watches [allMediaFilesProvider] but caches the [HeroBanner] widget instance.
+/// Watches [libraryFilesProvider] but caches the [HeroBanner] widget instance.
 /// Only recreates the banner when the first 5 item IDs change, preventing
 /// the DB stream's frequent emissions (during metadata fetching) from
 /// causing unnecessary banner rebuilds.
@@ -159,7 +159,7 @@ class _HeroBannerSectionState extends ConsumerState<_HeroBannerSection> {
 
   @override
   Widget build(BuildContext context) {
-    final asyncFiles = ref.watch(allMediaFilesProvider);
+    final asyncFiles = ref.watch(libraryFilesProvider);
     final files = asyncFiles.value;
     if (files == null || files.isEmpty) return const SizedBox.shrink();
 
@@ -194,7 +194,7 @@ class _HeroBannerSectionState extends ConsumerState<_HeroBannerSection> {
   }
 
   void _onPlay(MediaItem item) {
-    final files = ref.read(allMediaFilesProvider).value;
+    final files = ref.read(libraryFilesProvider).value;
     final seriesList = ref.read(groupedSeriesProvider);
     
     if (item.type == MediaType.movie || item.type == MediaType.uncategorized) {
@@ -220,7 +220,7 @@ class _HeroBannerSectionState extends ConsumerState<_HeroBannerSection> {
   }
 
   void _onMoreInfo(MediaItem item) {
-    final files = ref.read(allMediaFilesProvider).value;
+    final files = ref.read(libraryFilesProvider).value;
     final seriesList = ref.read(groupedSeriesProvider);
 
     if (item.type == MediaType.movie || item.type == MediaType.uncategorized) {
@@ -382,67 +382,23 @@ class _RecentItem {
 
 // Category Grids Sliver Section
 
-/// A custom sliver that watches [allMediaFilesProvider] and produces
+/// A custom sliver that watches [libraryFilesProvider] and produces
 /// multiple child slivers - one [MediaGrid.buildSlivers] per category.
 ///
 /// TV Shows and Anime are grouped by series (one card per series),
 /// Movies and Uncategorized show individual files.
 ///
 /// Caches the widget to avoid unnecessary rebuilds during metadata fetching.
-class _CategoryGridsSliverSection extends ConsumerStatefulWidget {
+class _CategoryGridsSliverSection extends ConsumerWidget {
   const _CategoryGridsSliverSection();
 
   @override
-  ConsumerState<_CategoryGridsSliverSection> createState() =>
-      _CategoryGridsSliverSectionState();
-}
-
-class _CategoryGridsSliverSectionState
-    extends ConsumerState<_CategoryGridsSliverSection> {
-  String _trackedIdHash = '';
-  Widget _cached = const SliverToBoxAdapter(child: SizedBox.shrink());
-
-  @override
-  Widget build(BuildContext context) {
-    final allMediaFilesAsync = ref.watch(allMediaFilesProvider);
-    final files = allMediaFilesAsync.value;
-    if (files == null || files.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
-    // Also watch grouped series for TV/anime
-    final allSeries = ref.watch(groupedSeriesProvider);
-
-    // Build a lightweight hash of all file IDs + series count.
-    final newIdHash =
-        '${files.map((f) => f.id).join(',')}_${allSeries.length}';
-    if (newIdHash == _trackedIdHash) {
-      return _cached;
-    }
-    _trackedIdHash = newIdHash;
-
-    final allMediaItems = files.map(MediaItem.fromMediaFile).toList();
-
-    // Movies: individual file cards
-    final movieItems =
-        allMediaItems.where((item) => item.type == MediaType.movie).toList();
-
-    // TV Shows: grouped series cards
-    final tvSeries =
-        allSeries.where((s) => s.type == MediaType.tvShow).toList();
-    final tvItems =
-        tvSeries.map((s) => MediaItem.fromSeriesItem(s)).toList();
-
-    // Anime: grouped series cards
-    final animeSeries =
-        allSeries.where((s) => s.type == MediaType.anime).toList();
-    final animeItems =
-        animeSeries.map((s) => MediaItem.fromSeriesItem(s)).toList();
-
-    // Uncategorized: individual file cards
-    final uncategorizedItems = allMediaItems
-        .where((item) => item.type == MediaType.uncategorized)
-        .toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch individual scoped providers so this widget doesn't rebuild when unrelated categories change.
+    final movieItems = ref.watch(movieFilesProvider);
+    final tvItems = ref.watch(tvSeriesProvider);
+    final animeItems = ref.watch(animeSeriesProvider);
+    final uncategorizedItems = ref.watch(uncategorizedFilesProvider);
 
     // Collect all category slivers into a single list.
     final slivers = <Widget>[];
@@ -453,7 +409,7 @@ class _CategoryGridsSliverSectionState
         items: movieItems,
         onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Movies'))),
         onItemTap: (index) =>
-            _navigateToPlayer(context, movieItems[index]),
+            _navigateToPlayer(context, ref, movieItems[index]),
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
@@ -463,8 +419,11 @@ class _CategoryGridsSliverSectionState
         title: 'TV Shows',
         items: tvItems,
         onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'TV Shows'))),
-        onItemTap: (index) =>
-            _navigateToMediaDetail(context, series: tvSeries[index]),
+        onItemTap: (index) {
+            final allSeries = ref.read(groupedSeriesProvider);
+            final series = allSeries.firstWhere((s) => s.groupKey == tvItems[index].id);
+            _navigateToMediaDetail(context, series: series);
+        }
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
@@ -474,8 +433,11 @@ class _CategoryGridsSliverSectionState
         title: 'Anime',
         items: animeItems,
         onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Anime'))),
-        onItemTap: (index) =>
-            _navigateToMediaDetail(context, series: animeSeries[index]),
+        onItemTap: (index) {
+            final allSeries = ref.read(groupedSeriesProvider);
+            final series = allSeries.firstWhere((s) => s.groupKey == animeItems[index].id);
+            _navigateToMediaDetail(context, series: series);
+        }
       ).buildSlivers(context));
       slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 36)));
     }
@@ -486,23 +448,20 @@ class _CategoryGridsSliverSectionState
         items: uncategorizedItems,
         onSeeAll: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryScreen(title: 'Uncategorized'))),
         onItemTap: (index) {
-          final file = files.firstWhere((f) => f.id.toString() == uncategorizedItems[index].id);
+          final file = ref.read(libraryFilesProvider).value!.firstWhere((f) => f.id.toString() == uncategorizedItems[index].id);
           _navigateToMediaDetail(context, mediaFile: file);
         },
       ).buildSlivers(context));
     }
 
     if (slivers.isEmpty) {
-      _cached = const SliverToBoxAdapter(child: SizedBox.shrink());
-      return _cached;
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
-    _cached = SliverMainAxisGroup(slivers: slivers);
-    return _cached;
+    return SliverMainAxisGroup(slivers: slivers);
   }
-
-  void _navigateToPlayer(BuildContext context, MediaItem item) {
-    final files = ref.read(allMediaFilesProvider).value;
+  void _navigateToPlayer(BuildContext context, WidgetRef ref, MediaItem item) {
+    final files = ref.read(libraryFilesProvider).value;
     if (files != null) {
       final matchingFile =
           files.firstWhere((file) => file.id.toString() == item.id);
@@ -535,14 +494,14 @@ class _CategoryGridsSliverSectionState
 
 // Empty Library Placeholder
 
-/// Only watches [allMediaFilesProvider] and [recentlyAddedFilesProvider]
+/// Only watches [libraryFilesProvider] and [recentlyAddedFilesProvider]
 /// to decide whether to show the empty state.
 class _EmptyLibraryPlaceholder extends ConsumerWidget {
   const _EmptyLibraryPlaceholder();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allMediaFiles = ref.watch(allMediaFilesProvider).value ?? [];
+    final allMediaFiles = ref.watch(libraryFilesProvider).value ?? [];
     final recentlyAdded = ref.watch(recentlyAddedFilesProvider).value ?? [];
 
     if (allMediaFiles.isNotEmpty || recentlyAdded.isNotEmpty) {
@@ -787,9 +746,9 @@ class _NavItemState extends State<_NavItem> {
             style: AppTextStyles.navItem.copyWith(
               fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w400,
               color: widget.isActive
-                  ? Colors.white
+                  ? AppTheme.textPrimary
                   : _hovering
-                      ? Colors.white70
+                      ? AppTheme.textSecondary
                       : AppTheme.mutedText,
             ),
             child: Column(

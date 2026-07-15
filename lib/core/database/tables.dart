@@ -30,6 +30,9 @@ class LibraryFolders extends Table {
 
 /// Stores every video file discovered inside a [LibraryFolder].
 /// Each row represents a single playable file on disk.
+@TableIndex(name: 'idx_media_folder', columns: {#libraryFolderId})
+@TableIndex(name: 'idx_media_filepath', columns: {#filePath})
+@TableIndex(name: 'idx_media_tmdb', columns: {#tmdbId})
 class MediaFiles extends Table {
   /// Auto-incrementing primary key.
   IntColumn get id => integer().autoIncrement()();

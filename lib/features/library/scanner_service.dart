@@ -30,6 +30,8 @@ class LibraryScannerService {
     final existingPaths = existingFiles.toSet();
     final scannedPaths = <String>{};
 
+    final companionsBatch = <MediaFilesCompanion>[];
+
     try {
       await for (final entity in dir.list(recursive: true, followLinks: false)) {
         if (entity is File) {
@@ -40,13 +42,15 @@ class LibraryScannerService {
             
             try {
               final stat = await entity.stat();
-              await _db.upsertMediaFile(
-                filePath: path,
-                fileName: p.basenameWithoutExtension(path),
-                fileExtension: ext.substring(1), // remove dot
-                fileSizeBytes: stat.size,
-                libraryFolderId: folder.id,
-                lastModified: stat.modified,
+              companionsBatch.add(
+                MediaFilesCompanion.insert(
+                  filePath: path,
+                  fileName: p.basenameWithoutExtension(path),
+                  fileExtension: ext.substring(1), // remove dot
+                  fileSizeBytes: BigInt.from(stat.size),
+                  libraryFolderId: folder.id,
+                  lastModified: stat.modified,
+                )
               );
             } catch (_) {
               // Individual file stat/insert failed - skip this file but
@@ -54,6 +58,10 @@ class LibraryScannerService {
             }
           }
         }
+      }
+      
+      if (companionsBatch.isNotEmpty) {
+        await _db.upsertMediaFilesBatch(companionsBatch);
       }
     } catch (_) {
       // Directory listing failed (permission denied, etc.) - proceed to
