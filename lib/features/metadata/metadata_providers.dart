@@ -37,6 +37,35 @@ class TmdbApiKeyNotifier extends Notifier<String> {
 final tmdbApiKeyProvider =
     NotifierProvider<TmdbApiKeyNotifier, String>(TmdbApiKeyNotifier.new);
 
+const _tmdbApiBaseUrlPref = 'tmdb_api_base_url';
+const String kDefaultTmdbApiBaseUrl = 'https://api.themoviedb.org/3';
+
+// Base URL
+
+/// Holds the custom TMDB API base URL. Initialized from SharedPreferences on app start.
+class TmdbApiBaseUrlNotifier extends Notifier<String> {
+  @override
+  String build() => kDefaultTmdbApiBaseUrl;
+
+  /// Load the saved custom URL from SharedPreferences.
+  Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getString(_tmdbApiBaseUrlPref) ?? kDefaultTmdbApiBaseUrl;
+  }
+
+  /// Save a new custom URL.
+  Future<void> save(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), ''); // strip trailing slashes
+    final targetUrl = cleanUrl.isEmpty ? kDefaultTmdbApiBaseUrl : cleanUrl;
+    await prefs.setString(_tmdbApiBaseUrlPref, targetUrl);
+    state = targetUrl;
+  }
+}
+
+final tmdbApiBaseUrlProvider =
+    NotifierProvider<TmdbApiBaseUrlNotifier, String>(TmdbApiBaseUrlNotifier.new);
+
 // TMDB Client
 
 /// Provides a TmdbClient instance when an API key is available.
@@ -44,7 +73,8 @@ final tmdbApiKeyProvider =
 final tmdbClientProvider = Provider<TmdbClient?>((ref) {
   final apiKey = ref.watch(tmdbApiKeyProvider);
   if (apiKey.isEmpty) return null;
-  return TmdbClient(apiKey: apiKey);
+  final baseUrl = ref.watch(tmdbApiBaseUrlProvider);
+  return TmdbClient(apiKey: apiKey, baseUrl: baseUrl);
 });
 
 // Metadata Service

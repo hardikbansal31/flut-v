@@ -11,6 +11,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:flutter_video/features/browse/models/series_item.dart';
 
 
 /// Fullscreen player screen using media_kit and window_manager.
@@ -228,6 +229,64 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     }
   }
 
+  Future<void> _showAudioDialog() async {
+    final tracks = player.state.tracks.audio;
+    final currentTrack = player.state.track.audio;
+
+    final wasPlaying = _isPlaying;
+    if (wasPlaying) {
+      await player.pause();
+    }
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Audio'),
+          backgroundColor: AppTheme.subtitlesDialogBackground,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: tracks.map((track) {
+                final isSelected = track == currentTrack;
+                final trackName = track.id == 'no' 
+                    ? 'None' 
+                    : (track.title ?? track.language ?? track.id);
+                
+                return ListTile(
+                  title: Text(
+                    trackName,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
+                    ),
+                  ),
+                  trailing: isSelected ? Icon(PhosphorIcons.check, color: Theme.of(context).colorScheme.primary) : null,
+                  onTap: () {
+                    player.setAudioTrack(track);
+                    Navigator.of(context).pop();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (wasPlaying) {
+      await player.play();
+    }
+  }
+
   Future<void> _saveWatchProgress() async {
     // If stream emitted 0 right before closing, use the highest cached position
     final positionToSave = _currentPosition > 0 ? _currentPosition : _maxValidPosition;
@@ -248,6 +307,32 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     super.dispose();
   }
 
+  Widget _buildTitle() {
+    final file = widget.mediaFile;
+    
+    final showName = SeriesItem.seriesTitleFor(file);
+    final epLabel = SeriesItem.episodeLabelFor(file);
+    final epName = SeriesItem.episodeNameFor(file);
+
+    if (epLabel != null) {
+      final subTitle = [epLabel, epName].where((e) => e != null && e.isNotEmpty).join(' - ');
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(showName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          if (subTitle.isNotEmpty)
+            Text(subTitle, style: TextStyle(color: Colors.white.withAlpha(179), fontSize: 13)),
+        ],
+      );
+    }
+
+    return Text(
+      file.tmdbTitle ?? file.fileName,
+      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -261,9 +346,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         backgroundColor: Colors.black,
         body: MaterialDesktopVideoControlsTheme(
         normal: MaterialDesktopVideoControlsThemeData(
+          hideMouseOnControlsRemoval: true,
           topButtonBar: [
             const BackButton(color: Colors.white),
+            const SizedBox(width: 8),
+            _buildTitle(),
             const Spacer(),
+            IconButton(
+              icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+              onPressed: _showAudioDialog,
+            ),
             IconButton(
               icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
               onPressed: _showSubtitleDialog,
@@ -271,9 +363,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           ],
         ),
         fullscreen: MaterialDesktopVideoControlsThemeData(
+          hideMouseOnControlsRemoval: true,
           topButtonBar: [
             const BackButton(color: Colors.white),
+            const SizedBox(width: 8),
+            _buildTitle(),
             const Spacer(),
+            IconButton(
+              icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+              onPressed: _showAudioDialog,
+            ),
             IconButton(
               icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
               onPressed: _showSubtitleDialog,
@@ -284,7 +383,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           normal: MaterialVideoControlsThemeData(
             topButtonBar: [
               const BackButton(color: Colors.white),
+              const SizedBox(width: 8),
+              _buildTitle(),
               const Spacer(),
+              IconButton(
+                icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+                onPressed: _showAudioDialog,
+              ),
               IconButton(
                 icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
                 onPressed: _showSubtitleDialog,
@@ -294,7 +399,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           fullscreen: MaterialVideoControlsThemeData(
             topButtonBar: [
               const BackButton(color: Colors.white),
+              const SizedBox(width: 8),
+              _buildTitle(),
               const Spacer(),
+              IconButton(
+                icon: Icon(PhosphorIcons.speakerHigh, color: Colors.white),
+                onPressed: _showAudioDialog,
+              ),
               IconButton(
                 icon: Icon(PhosphorIcons.subtitles, color: Colors.white),
                 onPressed: _showSubtitleDialog,

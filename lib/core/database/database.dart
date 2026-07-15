@@ -128,14 +128,19 @@ class AppDatabase extends _$AppDatabase {
     required DateTime lastModified,
   }) {
     // Note: Do not overwrite durationMillis and positionMillis if updating.
-    return into(mediaFiles).insertOnConflictUpdate(
-      MediaFilesCompanion.insert(
-        filePath: filePath,
-        fileName: fileName,
-        fileExtension: fileExtension,
-        fileSizeBytes: BigInt.from(fileSizeBytes),
-        libraryFolderId: libraryFolderId,
-        lastModified: lastModified,
+    final companion = MediaFilesCompanion.insert(
+      filePath: filePath,
+      fileName: fileName,
+      fileExtension: fileExtension,
+      fileSizeBytes: BigInt.from(fileSizeBytes),
+      libraryFolderId: libraryFolderId,
+      lastModified: lastModified,
+    );
+    return into(mediaFiles).insert(
+      companion,
+      onConflict: DoUpdate(
+        (old) => companion,
+        target: [mediaFiles.filePath],
       ),
     );
   }

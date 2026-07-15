@@ -62,6 +62,9 @@ class MetadataService {
   MetadataFetchStatus _currentStatus = MetadataFetchStatus.idle;
   MetadataFetchStatus get currentStatus => _currentStatus;
 
+  /// In-memory cache for TV series search results to avoid redundant API hits for multi-episode scans.
+  final Map<String, TmdbSearchResult?> _tvSearchCache = {};
+
   MetadataService({required AppDatabase db, required TmdbClient client})
       : _db = db,
         _client = client;
@@ -162,32 +165,40 @@ class MetadataService {
     // Step 1: Search for the TV series
 
     TmdbSearchResult? seriesResult;
-    try {
-      // Try English first
-      debugPrint('[MetadataService] Searching TMDB TV: "${parsed.cleanTitle}"');
-      seriesResult = await _client.searchTv(parsed.cleanTitle);
+    final cacheKey = parsed.cleanTitle.toLowerCase().trim();
 
-      // Fix 4: If no English results, retry with Japanese
-      if (seriesResult == null) {
-        debugPrint('[MetadataService] No English match, retrying with ja-JP: '
-            '"${parsed.cleanTitle}"');
-        seriesResult = await _client.searchTv(
-          parsed.cleanTitle,
-          language: 'ja-JP',
-        );
+    if (_tvSearchCache.containsKey(cacheKey)) {
+      debugPrint('[MetadataService] TV search cache hit for: "$cacheKey"');
+      seriesResult = _tvSearchCache[cacheKey];
+    } else {
+      try {
+        // Try English first
+        debugPrint('[MetadataService] Searching TMDB TV: "${parsed.cleanTitle}"');
+        seriesResult = await _client.searchTv(parsed.cleanTitle);
+
+        // Fix 4: If no English results, retry with Japanese
+        if (seriesResult == null) {
+          debugPrint('[MetadataService] No English match, retrying with ja-JP: '
+              '"${parsed.cleanTitle}"');
+          seriesResult = await _client.searchTv(
+            parsed.cleanTitle,
+            language: 'ja-JP',
+          );
+        }
+        _tvSearchCache[cacheKey] = seriesResult;
+      } on TmdbRateLimitException catch (e) {
+        debugPrint('[MetadataService] Rate limit hit: ${e.retryAfterSeconds}s');
+        _emitStatus(_currentStatus.copyWith(
+          errorMessage: 'Rate limited. Waiting ${e.retryAfterSeconds}s...',
+        ));
+        rethrow;
+      } on TmdbAuthException {
+        debugPrint('[MetadataService] Auth failure: Invalid TMDB API key');
+        _emitStatus(_currentStatus.copyWith(
+          errorMessage: 'Invalid TMDB API key. Please check Settings.',
+        ));
+        rethrow;
       }
-    } on TmdbRateLimitException catch (e) {
-      debugPrint('[MetadataService] Rate limit hit: ${e.retryAfterSeconds}s');
-      _emitStatus(_currentStatus.copyWith(
-        errorMessage: 'Rate limited. Waiting ${e.retryAfterSeconds}s...',
-      ));
-      rethrow;
-    } on TmdbAuthException {
-      debugPrint('[MetadataService] Auth failure: Invalid TMDB API key');
-      _emitStatus(_currentStatus.copyWith(
-        errorMessage: 'Invalid TMDB API key. Please check Settings.',
-      ));
-      rethrow;
     }
 
     if (seriesResult == null) {
@@ -279,6 +290,7 @@ class MetadataService {
   /// to stay within TMDB rate limits. Handles rate limit errors
   /// gracefully with automatic retry.
   Future<void> fetchAllUnmatched() async {
+    _tvSearchCache.clear();
     final unmatched = await _db.getUnmatchedMediaFiles();
     if (unmatched.isEmpty) return;
 
@@ -314,8 +326,18 @@ class MetadataService {
             '"${unmatched[i].fileName}": $e');
         // Network error or other - mark this file as uncategorized, continue
         await _db.markAsUncategorized(unmatched[i].id);
+        
+        String msg = 'Error fetching metadata: $e';
+        final errString = e.toString();
+        if (errString.contains('SocketException') ||
+            errString.contains('ClientException') ||
+            errString.contains('HandshakeException')) {
+          msg = 'Network error connecting to TMDB. If TMDB is blocked in your region, '
+              'try setting a custom TMDB API Base URL in Settings.';
+        }
+        
         _emitStatus(_currentStatus.copyWith(
-          errorMessage: 'Error fetching metadata: $e',
+          errorMessage: msg,
         ));
       }
 

@@ -16,17 +16,21 @@ class LibraryManagementScreen extends ConsumerStatefulWidget {
 class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScreen> {
   final _pathController = TextEditingController();
   final _apiKeyController = TextEditingController();
+  final _baseUrlController = TextEditingController();
   bool _apiKeyObscured = true;
 
   @override
   void initState() {
     super.initState();
-    // Load saved API key into the text field
+    // Load saved API key and base URL into the text fields
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final savedKey = ref.read(tmdbApiKeyProvider);
       if (savedKey.isNotEmpty) {
         _apiKeyController.text = savedKey;
       }
+      
+      final savedBaseUrl = ref.read(tmdbApiBaseUrlProvider);
+      _baseUrlController.text = savedBaseUrl;
     });
   }
 
@@ -34,6 +38,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
   void dispose() {
     _pathController.dispose();
     _apiKeyController.dispose();
+    _baseUrlController.dispose();
     super.dispose();
   }
 
@@ -87,16 +92,16 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
     }
   }
 
-  Future<void> _saveApiKey() async {
+  Future<void> _saveTmdbSettings() async {
     final key = _apiKeyController.text.trim();
+    final url = _baseUrlController.text.trim();
     await ref.read(tmdbApiKeyProvider.notifier).save(key);
+    await ref.read(tmdbApiBaseUrlProvider.notifier).save(url);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(key.isEmpty
-              ? 'TMDB API key removed.'
-              : 'TMDB API key saved successfully.'),
-          backgroundColor: key.isEmpty ? Colors.orange[800] : Colors.green[800],
+          content: const Text('TMDB settings saved successfully.'),
+          backgroundColor: Colors.green[800],
         ),
       );
     }
@@ -160,46 +165,56 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // TMDB API Key Section
+            // TMDB Settings Section
             Text(
-              'TMDB API Key',
+              'TMDB Settings',
               style: AppTextStyles.sectionHeader,
             ),
             const SizedBox(height: 8),
             Text(
-              'Enter your TMDB API key (v3 auth) to fetch movie/TV metadata, posters, and ratings.',
+              'Configure your TMDB API key and base URL to fetch movie/TV metadata, posters, and ratings.',
               style: AppTextStyles.bodyMuted,
             ),
             const SizedBox(height: 12),
+            TextField(
+              controller: _apiKeyController,
+              obscureText: _apiKeyObscured,
+              decoration: InputDecoration(
+                labelText: 'TMDB API Key (v3 auth)',
+                hintText: 'Paste your TMDB API key here',
+                border: const OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.black26,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _apiKeyObscured
+                        ? PhosphorIcons.eyeClosed
+                        : PhosphorIcons.eye,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _apiKeyObscured = !_apiKeyObscured),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _baseUrlController,
+              decoration: const InputDecoration(
+                labelText: 'TMDB API Base URL (Optional)',
+                hintText: 'Default: https://api.themoviedb.org/3',
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.black26,
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _apiKeyController,
-                    obscureText: _apiKeyObscured,
-                    decoration: InputDecoration(
-                      hintText: 'Paste your TMDB API key here',
-                      border: const OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.black26,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _apiKeyObscured
-                              ? PhosphorIcons.eyeClosed
-                              : PhosphorIcons.eye,
-                          size: 20,
-                        ),
-                        onPressed: () =>
-                            setState(() => _apiKeyObscured = !_apiKeyObscured),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
-                  onPressed: _saveApiKey,
+                  onPressed: _saveTmdbSettings,
                   icon: Icon(PhosphorIcons.floppyDisk, size: 18),
-                  label: const Text('Save'),
+                  label: const Text('Save Settings'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: kAccentColor,
@@ -207,11 +222,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                         horizontal: 20, vertical: 16),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: fetchStatus.isFetching ? null : _fetchMetadata,
                   icon: fetchStatus.isFetching
@@ -228,7 +239,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.white12,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                        horizontal: 16, vertical: 16),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -240,7 +251,7 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.white12,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                        horizontal: 16, vertical: 16),
                   ),
                 ),
               ],

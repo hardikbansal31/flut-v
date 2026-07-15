@@ -34,8 +34,9 @@ void main() async {
     ],
   );
 
-  // Load TMDB API key from SharedPreferences before running the app
+  // Load TMDB API key & custom base URL from SharedPreferences before running the app
   await container.read(tmdbApiKeyProvider.notifier).load();
+  await container.read(tmdbApiBaseUrlProvider.notifier).load();
 
   runApp(
     UncontrolledProviderScope(

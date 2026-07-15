@@ -6,6 +6,7 @@
 library;
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 // Image URL constants
@@ -199,12 +200,15 @@ const int kAnimationGenreId = 16;
 /// TMDB API v3 client.
 class TmdbClient {
   final String apiKey;
+  final String baseUrl;
   final http.Client _http;
 
-  static const _baseUrl = 'https://api.themoviedb.org/3';
-
-  TmdbClient({required this.apiKey, http.Client? httpClient})
-      : _http = httpClient ?? http.Client();
+  TmdbClient({
+    required this.apiKey,
+    String? baseUrl,
+    http.Client? httpClient,
+  })  : baseUrl = baseUrl ?? 'https://api.themoviedb.org/3',
+        _http = httpClient ?? http.Client();
 
   /// Search for movies and TV shows with a single query.
   ///
@@ -218,7 +222,7 @@ class TmdbClient {
       if (year != null) 'year': year.toString(),
     };
 
-    final uri = Uri.parse('$_baseUrl/search/multi').replace(queryParameters: params);
+    final uri = Uri.parse('$baseUrl/search/multi').replace(queryParameters: params);
     final response = await _request(uri);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final results = data['results'] as List<dynamic>? ?? [];
@@ -251,7 +255,7 @@ class TmdbClient {
     };
 
     final uri =
-        Uri.parse('$_baseUrl/search/tv').replace(queryParameters: params);
+        Uri.parse('$baseUrl/search/tv').replace(queryParameters: params);
     final response = await _request(uri);
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final results = data['results'] as List<dynamic>? ?? [];
@@ -275,7 +279,7 @@ class TmdbClient {
     int episode,
   ) async {
     final uri = Uri.parse(
-      '$_baseUrl/tv/$seriesId/season/$season/episode/$episode',
+      '$baseUrl/tv/$seriesId/season/$season/episode/$episode',
     ).replace(queryParameters: {'api_key': apiKey});
 
     try {
@@ -297,7 +301,7 @@ class TmdbClient {
     int season,
   ) async {
     final uri = Uri.parse(
-      '$_baseUrl/tv/$seriesId/season/$season',
+      '$baseUrl/tv/$seriesId/season/$season',
     ).replace(queryParameters: {'api_key': apiKey});
 
     try {
@@ -318,23 +322,53 @@ class TmdbClient {
         .join(',');
   }
 
-  /// Perform an HTTP GET with error handling.
+  /// Perform an HTTP GET with error handling and automatic retry for network errors.
   Future<http.Response> _request(Uri uri) async {
-    final response = await _http.get(uri);
+    int retries = 3;
+    Duration delay = const Duration(milliseconds: 500);
 
-    switch (response.statusCode) {
-      case 200:
-        return response;
-      case 401:
-        throw TmdbAuthException();
-      case 429:
-        final retryAfter = int.tryParse(
-                response.headers['retry-after'] ?? '10') ??
-            10;
-        throw TmdbRateLimitException(retryAfter);
-      default:
-        throw TmdbApiException(response.statusCode, response.body);
+    for (int attempt = 1; attempt <= retries; attempt++) {
+      try {
+        final response = await _http.get(
+          uri,
+          headers: {
+            'User-Agent': 'Penguin/1.0 (Linux; Dart/http)',
+            'Accept': 'application/json',
+          },
+        );
+
+        switch (response.statusCode) {
+          case 200:
+            return response;
+          case 401:
+            throw TmdbAuthException();
+          case 429:
+            final retryAfter = int.tryParse(
+                    response.headers['retry-after'] ?? '10') ??
+                10;
+            throw TmdbRateLimitException(retryAfter);
+          default:
+            throw TmdbApiException(response.statusCode, response.body);
+        }
+      } catch (e) {
+        // If it's a rate limit or auth exception, do not retry
+        if (e is TmdbAuthException || e is TmdbRateLimitException) {
+          rethrow;
+        }
+
+        // If it's the last attempt, rethrow the exception
+        if (attempt == retries) {
+          debugPrint('[TmdbClient] Request failed after $retries attempts: $e');
+          rethrow;
+        }
+
+        debugPrint('[TmdbClient] Request failed (attempt $attempt/$retries), retrying in ${delay.inMilliseconds}ms: $e');
+        await Future<void>.delayed(delay);
+        delay *= 2; // Exponential backoff
+      }
     }
+
+    throw Exception('Request failed');
   }
 
   /// Dispose the HTTP client.
