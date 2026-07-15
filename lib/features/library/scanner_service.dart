@@ -95,10 +95,26 @@ class LibraryScannerService {
     }
 
     final existingPaths = await _db.getFilePathsForFolder(folder.id);
-    for (final path in existingPaths) {
-      if (!await File(path).exists()) {
-        await _db.removeMediaFileByPath(path);
+    
+    // Batch existence checks (concurrency of ~50 to avoid exhausting file descriptors)
+    final missingPaths = <String>[];
+    const batchSize = 50;
+    
+    for (var i = 0; i < existingPaths.length; i += batchSize) {
+      final batch = existingPaths.skip(i).take(batchSize).toList();
+      final existenceResults = await Future.wait(
+        batch.map((path) => File(path).exists())
+      );
+      
+      for (var j = 0; j < batch.length; j++) {
+        if (!existenceResults[j]) {
+          missingPaths.add(batch[j]);
+        }
       }
+    }
+    
+    for (final path in missingPaths) {
+      await _db.removeMediaFileByPath(path);
     }
   }
 

@@ -295,6 +295,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     }
   }
 
+  Future<void> _handleEscape() async {
+    final nav = Navigator.of(context);
+    final isFullscreen = await windowManager.isFullScreen();
+    if (isFullscreen) {
+      await windowManager.setFullScreen(false);
+    }
+    if (mounted) nav.maybePop();
+  }
+
   Future<void> _saveWatchProgress() async {
     // If stream emitted 0 right before closing, use the highest cached position
     final positionToSave = _currentPosition > 0 ? _currentPosition : _maxValidPosition;
@@ -402,6 +411,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 player.seek(pos);
                 return KeyEventResult.handled;
               }
+            }
+
+            if (key == LogicalKeyboardKey.keyF) {
+              windowManager.isFullScreen().then((isFullscreen) {
+                windowManager.setFullScreen(!isFullscreen);
+              });
+              return KeyEventResult.handled;
+            } else if (key == LogicalKeyboardKey.escape) {
+              _handleEscape();
+              return KeyEventResult.handled;
             }
           }
           return KeyEventResult.ignored;

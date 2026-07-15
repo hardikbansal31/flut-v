@@ -26,14 +26,14 @@ class PenguinApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return CallbackShortcuts(
       bindings: {
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyQ): () async {
+        SingleActivator(LogicalKeyboardKey.keyQ, control: true): () async {
           final saveCallback = ref.read(saveStateProvider);
           if (saveCallback != null) {
             await saveCallback();
           }
           await windowManager.destroy();
         },
-        LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.keyQ): () async {
+        SingleActivator(LogicalKeyboardKey.keyQ, meta: true): () async {
           final saveCallback = ref.read(saveStateProvider);
           if (saveCallback != null) {
             await saveCallback();

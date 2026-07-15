@@ -69,5 +69,10 @@ class LibraryWatcherService {
       sub.cancel();
     }
     _subscriptions.clear();
+
+    for (final timer in _debouncers.values) {
+      timer.cancel();
+    }
+    _debouncers.clear();
   }
 }

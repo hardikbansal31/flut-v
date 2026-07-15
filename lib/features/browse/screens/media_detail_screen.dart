@@ -229,6 +229,7 @@ class _BackdropBanner extends StatelessWidget {
               imageUrl: item.posterUrl!,
               fit: BoxFit.cover,
               memCacheWidth: (500 * dpr).round(),
+              memCacheHeight: (750 * dpr).round(),
               placeholder: (_, _) => Container(color: kSurfaceColor),
               errorWidget: (_, _, _) => Container(color: kSurfaceColor),
             )
