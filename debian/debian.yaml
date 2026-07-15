@@ -1,6 +1,6 @@
 flutter_app:
-  command: flutter_video
-  arch: x64
+  command: penguin
+  arch: amd64
   parent: /usr/local/lib
   nonInteractive: true
   control:
