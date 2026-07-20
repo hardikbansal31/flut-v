@@ -18,12 +18,12 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "build\windows\x64\runner\Release\flutter_video.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "build\windows\x64\runner\Release\penguin.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\Penguin"; Filename: "{app}\flutter_video.exe"
-Name: "{autodesktop}\Penguin"; Filename: "{app}\flutter_video.exe"; Tasks: desktopicon
+Name: "{autoprograms}\Penguin"; Filename: "{app}\penguin.exe"
+Name: "{autodesktop}\Penguin"; Filename: "{app}\penguin.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\flutter_video.exe"; Description: "{cm:LaunchProgram,Penguin}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\penguin.exe"; Description: "{cm:LaunchProgram,Penguin}"; Flags: nowait postinstall skipifsilent
