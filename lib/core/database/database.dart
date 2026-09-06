@@ -52,7 +52,12 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(mediaFiles, mediaFiles.lastWatchedAt);
         }
         if (from < 5) {
-          await m.addColumn(mediaFiles, mediaFiles.metadataOverridden);
+          final columns = await customSelect("PRAGMA table_info('media_files');")
+              .map((row) => row.read<String>('name'))
+              .get();
+          if (!columns.contains('metadata_overridden')) {
+            await m.addColumn(mediaFiles, mediaFiles.metadataOverridden);
+          }
         }
       },
     );

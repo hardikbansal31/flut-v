@@ -90,7 +90,7 @@ jobs:
           Terminal=false
           Type=Application
           Categories=AudioVideo;Player;Video;
-          StartupWMClass=${APP_NAME}
+          StartupWMClass=io.github.hardikbansal.penguin
           EOF
 
           cat > ${DEB_DIR}/DEBIAN/control << EOF
