@@ -63,10 +63,15 @@ jobs:
           mkdir -p ${DEB_DIR}/usr/lib/${APP_NAME}
           mkdir -p ${DEB_DIR}/usr/bin
           mkdir -p ${DEB_DIR}/usr/share/applications
+          mkdir -p ${DEB_DIR}/usr/share/icons/hicolor/512x512/apps
+          mkdir -p ${DEB_DIR}/usr/share/pixmaps
           mkdir -p ${DEB_DIR}/usr/share/doc/${APP_NAME}
 
           cp -r build/linux/x64/release/bundle/* \
             ${DEB_DIR}/usr/lib/${APP_NAME}/
+
+          cp assets/icons/icon_512.png ${DEB_DIR}/usr/share/icons/hicolor/512x512/apps/${APP_NAME}.png
+          cp assets/icons/icon_512.png ${DEB_DIR}/usr/share/pixmaps/${APP_NAME}.png
 
           cp LICENSE ${DEB_DIR}/usr/share/doc/${APP_NAME}/copyright
 
@@ -79,10 +84,13 @@ jobs:
           cat > ${DEB_DIR}/usr/share/applications/${APP_NAME}.desktop << EOF
           [Desktop Entry]
           Name=Penguin
-          Exec=/usr/lib/${APP_NAME}/${APP_NAME}
-          Icon=/usr/lib/${APP_NAME}/data/flutter_assets/assets/icon/icon.png
+          Comment=A beautiful cross-platform media player with a Netflix-style UI
+          Exec=/usr/lib/${APP_NAME}/${APP_NAME} %U
+          Icon=${APP_NAME}
+          Terminal=false
           Type=Application
-          Categories=AudioVideo;Player;
+          Categories=AudioVideo;Player;Video;
+          StartupWMClass=${APP_NAME}
           EOF
 
           cat > ${DEB_DIR}/DEBIAN/control << EOF

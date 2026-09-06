@@ -39,6 +39,7 @@ class TmdbSearchResult {
   final double voteAverage;
   final List<int> genreIds;
   final String? originalLanguage;
+  final List<String> originCountry;
 
   const TmdbSearchResult({
     required this.id,
@@ -51,10 +52,30 @@ class TmdbSearchResult {
     this.voteAverage = 0,
     this.genreIds = const [],
     this.originalLanguage,
+    this.originCountry = const [],
   });
 
   factory TmdbSearchResult.fromJson(Map<String, dynamic> json) {
-    final type = json['media_type'] as String? ?? 'movie';
+    final type = json['media_type'] as String? ??
+        (json.containsKey('first_air_date') || json.containsKey('name')
+            ? 'tv'
+            : 'movie');
+
+    final rawGenreIds = json['genre_ids'] as List<dynamic>?;
+    final rawGenres = json['genres'] as List<dynamic>?;
+    final parsedGenreIds = rawGenreIds != null
+        ? rawGenreIds.map((e) => e as int).toList()
+        : rawGenres != null
+            ? rawGenres
+                .map((e) => (e as Map<String, dynamic>)['id'] as int)
+                .toList()
+            : <int>[];
+
+    final originCountries = (json['origin_country'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        const [];
+
     return TmdbSearchResult(
       id: json['id'] as int,
       mediaType: type,
@@ -69,11 +90,9 @@ class TmdbSearchResult {
               ? json['first_air_date'] as String?
               : json['release_date'] as String?),
       voteAverage: (json['vote_average'] as num?)?.toDouble() ?? 0,
-      genreIds: (json['genre_ids'] as List<dynamic>?)
-              ?.map((e) => e as int)
-              .toList() ??
-          [],
+      genreIds: parsedGenreIds,
       originalLanguage: json['original_language'] as String?,
+      originCountry: originCountries,
     );
   }
 
@@ -238,14 +257,11 @@ class TmdbClient {
     return null;
   }
 
-  /// Search specifically for TV shows.
-  ///
-  /// Uses `/search/tv` instead of `/search/multi` for more accurate TV
-  /// matching. Supports a [language] parameter for non-English fallback.
-  /// Returns the first result, or null if nothing found.
-  Future<TmdbSearchResult?> searchTv(
+  /// Search specifically for TV shows, returning up to [limit] results (default 5).
+  Future<List<TmdbSearchResult>> searchTvList(
     String query, {
     String language = 'en-US',
+    int limit = 5,
   }) async {
     final params = {
       'api_key': apiKey,
@@ -260,13 +276,94 @@ class TmdbClient {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final results = data['results'] as List<dynamic>? ?? [];
 
-    if (results.isEmpty) return null;
+    return results.take(limit).map((raw) {
+      final map = Map<String, dynamic>.from(raw as Map<String, dynamic>);
+      map['media_type'] = 'tv';
+      return TmdbSearchResult.fromJson(map);
+    }).toList();
+  }
 
-    // Build a TmdbSearchResult from the TV search response.
-    // /search/tv does not include media_type, so we inject it.
-    final first = results.first as Map<String, dynamic>;
-    first['media_type'] = 'tv';
-    return TmdbSearchResult.fromJson(first);
+  /// Search specifically for movies, returning up to [limit] results (default 5).
+  Future<List<TmdbSearchResult>> searchMovieList(
+    String query, {
+    int? year,
+    String language = 'en-US',
+    int limit = 5,
+  }) async {
+    final params = {
+      'api_key': apiKey,
+      'query': query,
+      'language': language,
+      'include_adult': 'false',
+      if (year != null) 'year': year.toString(),
+    };
+
+    final uri =
+        Uri.parse('$baseUrl/search/movie').replace(queryParameters: params);
+    final response = await _request(uri);
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final results = data['results'] as List<dynamic>? ?? [];
+
+    return results.take(limit).map((raw) {
+      final map = Map<String, dynamic>.from(raw as Map<String, dynamic>);
+      map['media_type'] = 'movie';
+      return TmdbSearchResult.fromJson(map);
+    }).toList();
+  }
+
+  /// Fetch full details for a TV series by TMDB ID.
+  Future<TmdbSearchResult?> fetchTvDetails(
+    int seriesId, {
+    String language = 'en-US',
+  }) async {
+    final uri = Uri.parse('$baseUrl/tv/$seriesId').replace(queryParameters: {
+      'api_key': apiKey,
+      'language': language,
+    });
+
+    try {
+      final response = await _request(uri);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      data['media_type'] = 'tv';
+      return TmdbSearchResult.fromJson(data);
+    } on TmdbApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// Fetch full details for a movie by TMDB ID.
+  Future<TmdbSearchResult?> fetchMovieDetails(
+    int movieId, {
+    String language = 'en-US',
+  }) async {
+    final uri = Uri.parse('$baseUrl/movie/$movieId').replace(queryParameters: {
+      'api_key': apiKey,
+      'language': language,
+    });
+
+    try {
+      final response = await _request(uri);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      data['media_type'] = 'movie';
+      return TmdbSearchResult.fromJson(data);
+    } on TmdbApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// Search specifically for TV shows.
+  ///
+  /// Uses `/search/tv` instead of `/search/multi` for more accurate TV
+  /// matching. Supports a [language] parameter for non-English fallback.
+  /// Returns the first result, or null if nothing found.
+  Future<TmdbSearchResult?> searchTv(
+    String query, {
+    String language = 'en-US',
+  }) async {
+    final list = await searchTvList(query, language: language, limit: 1);
+    return list.isNotEmpty ? list.first : null;
   }
 
   /// Fetch details for a specific TV episode.

@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -50,6 +50,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 4) {
           await m.addColumn(mediaFiles, mediaFiles.lastWatchedAt);
+        }
+        if (from < 5) {
+          await m.addColumn(mediaFiles, mediaFiles.metadataOverridden);
         }
       },
     );
@@ -222,10 +225,13 @@ class AppDatabase extends _$AppDatabase {
 
   // Metadata queries
 
-  /// Get all media files that have not been matched to TMDB yet (or failed previously).
+  /// Get all media files that have not been matched to TMDB yet (or failed previously),
+  /// excluding files that have been manually overridden by the user.
   Future<List<MediaFile>> getUnmatchedMediaFiles() {
     return (select(mediaFiles)
-          ..where((t) => t.tmdbId.isNull() | t.tmdbId.equals(-1)))
+          ..where((t) =>
+              (t.tmdbId.isNull() | t.tmdbId.equals(-1)) &
+              t.metadataOverridden.equals(false)))
         .get();
   }
 
@@ -242,6 +248,7 @@ class AppDatabase extends _$AppDatabase {
     double? voteAverage,
     String? genres,
     String? originalLanguage,
+    bool? metadataOverridden,
   }) async {
     await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
       MediaFilesCompanion(
@@ -255,6 +262,9 @@ class AppDatabase extends _$AppDatabase {
         voteAverage: Value(voteAverage),
         genres: Value(genres),
         originalLanguage: Value(originalLanguage),
+        metadataOverridden: metadataOverridden != null
+            ? Value(metadataOverridden)
+            : const Value.absent(),
       ),
     );
   }
@@ -270,9 +280,11 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Clear all metadata (for re-fetch).
+  /// Clear all metadata (for re-fetch), preserving files marked with metadataOverridden.
   Future<void> clearAllMetadata() async {
-    await (update(mediaFiles)).write(
+    await (update(mediaFiles)
+          ..where((t) => t.metadataOverridden.equals(false)))
+        .write(
       const MediaFilesCompanion(
         tmdbId: Value(null),
         mediaType: Value(null),

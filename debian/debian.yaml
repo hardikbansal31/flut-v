@@ -2,6 +2,7 @@ flutter_app:
   command: penguin
   arch: amd64
   parent: /usr/local/lib
+  icon: assets/icons/icon_512.png
   nonInteractive: true
   control:
     Package: penguin

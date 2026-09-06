@@ -13,6 +13,7 @@ import 'package:flutter_video/core/database/database.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
+import 'package:flutter_video/features/browse/widgets/edit_metadata_dialog.dart';
 import 'package:flutter_video/features/metadata/tmdb_client.dart' as tmdb;
 import 'package:flutter_video/features/player/screens/player_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,23 @@ class MediaDetailScreen extends ConsumerWidget {
   final SeriesItem? series;
   final MediaFile? mediaFile;
 
+  void _showEditMetadata(
+    BuildContext context, {
+    SeriesItem? series,
+    MediaFile? mediaFile,
+    required String initialTitle,
+  }) {
+    showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => EditMetadataDialog(
+        series: series,
+        mediaFile: mediaFile,
+        initialTitle: initialTitle,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allFiles = ref.watch(libraryFilesProvider).value ?? [];
@@ -35,14 +53,18 @@ class MediaDetailScreen extends ConsumerWidget {
     MediaFile? currentMediaFile;
 
     if (series != null) {
+      final initialEpisodeIds = series!.episodes.map((e) => e.id).toSet();
       currentSeries = allSeries.cast<SeriesItem?>().firstWhere(
-        (s) => s?.groupKey == series!.groupKey, 
-        orElse: () => series
+        (s) => s != null && s.episodes.any((e) => initialEpisodeIds.contains(e.id)),
+        orElse: () => allSeries.cast<SeriesItem?>().firstWhere(
+          (s) => s?.groupKey == series!.groupKey, 
+          orElse: () => series,
+        ),
       );
     } else if (mediaFile != null) {
       currentMediaFile = allFiles.cast<MediaFile?>().firstWhere(
         (f) => f?.id == mediaFile!.id, 
-        orElse: () => mediaFile
+        orElse: () => mediaFile,
       );
     }
 
@@ -62,7 +84,16 @@ class MediaDetailScreen extends ConsumerWidget {
 
           // Media info section
           SliverToBoxAdapter(
-            child: _MediaInfoSection(item: item, series: currentSeries),
+            child: _MediaInfoSection(
+              item: item,
+              series: currentSeries,
+              onEditMetadata: () => _showEditMetadata(
+                context,
+                series: currentSeries,
+                mediaFile: currentMediaFile,
+                initialTitle: item.title,
+              ),
+            ),
           ),
 
           // Content section
@@ -282,9 +313,15 @@ class _BackdropBanner extends StatelessWidget {
 // Series Info
 
 class _MediaInfoSection extends StatelessWidget {
-  const _MediaInfoSection({required this.item, this.series});
+  const _MediaInfoSection({
+    required this.item,
+    this.series,
+    this.onEditMetadata,
+  });
+
   final MediaItem item;
   final SeriesItem? series;
+  final VoidCallback? onEditMetadata;
 
   @override
   Widget build(BuildContext context) {
@@ -293,10 +330,32 @@ class _MediaInfoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
-          Text(
-            item.title,
-            style: AppTextStyles.seriesTitle,
+          // Title with Edit Metadata button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: AppTextStyles.seriesTitle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(PhosphorIcons.pencilSimple, size: 20),
+                tooltip: 'Edit Metadata',
+                style: IconButton.styleFrom(
+                  backgroundColor: kCardColor.withValues(alpha: 0.8),
+                  foregroundColor: AppTheme.textPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: kDivider),
+                  ),
+                  padding: const EdgeInsets.all(10),
+                ),
+                onPressed: onEditMetadata,
+              ),
+            ],
           ),
 
           const SizedBox(height: 10),

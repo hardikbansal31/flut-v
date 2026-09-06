@@ -101,4 +101,9 @@ class MediaFiles extends Table {
 
   /// Original language code from TMDB (e.g. "en", "ja").
   TextColumn get originalLanguage => text().nullable()();
+
+  /// Whether this file's metadata was manually overridden by the user.
+  /// If true, auto-scans and library refresh will not touch this file.
+  BoolColumn get metadataOverridden =>
+      boolean().withDefault(const Constant(false))();
 }

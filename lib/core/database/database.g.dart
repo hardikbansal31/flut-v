@@ -547,6 +547,20 @@ class $MediaFilesTable extends MediaFiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _metadataOverriddenMeta =
+      const VerificationMeta('metadataOverridden');
+  @override
+  late final GeneratedColumn<bool> metadataOverridden = GeneratedColumn<bool>(
+    'metadata_overridden',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("metadata_overridden" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -570,6 +584,7 @@ class $MediaFilesTable extends MediaFiles
     voteAverage,
     genres,
     originalLanguage,
+    metadataOverridden,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -751,6 +766,15 @@ class $MediaFilesTable extends MediaFiles
         ),
       );
     }
+    if (data.containsKey('metadata_overridden')) {
+      context.handle(
+        _metadataOverriddenMeta,
+        metadataOverridden.isAcceptableOrUnknown(
+          data['metadata_overridden']!,
+          _metadataOverriddenMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -844,6 +868,10 @@ class $MediaFilesTable extends MediaFiles
         DriftSqlType.string,
         data['${effectivePrefix}original_language'],
       ),
+      metadataOverridden: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}metadata_overridden'],
+      )!,
     );
   }
 
@@ -918,6 +946,10 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
 
   /// Original language code from TMDB (e.g. "en", "ja").
   final String? originalLanguage;
+
+  /// Whether this file's metadata was manually overridden by the user.
+  /// If true, auto-scans and library refresh will not touch this file.
+  final bool metadataOverridden;
   const MediaFile({
     required this.id,
     required this.filePath,
@@ -940,6 +972,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     this.voteAverage,
     this.genres,
     this.originalLanguage,
+    required this.metadataOverridden,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -991,6 +1024,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     if (!nullToAbsent || originalLanguage != null) {
       map['original_language'] = Variable<String>(originalLanguage);
     }
+    map['metadata_overridden'] = Variable<bool>(metadataOverridden);
     return map;
   }
 
@@ -1043,6 +1077,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       originalLanguage: originalLanguage == null && nullToAbsent
           ? const Value.absent()
           : Value(originalLanguage),
+      metadataOverridden: Value(metadataOverridden),
     );
   }
 
@@ -1073,6 +1108,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       voteAverage: serializer.fromJson<double?>(json['voteAverage']),
       genres: serializer.fromJson<String?>(json['genres']),
       originalLanguage: serializer.fromJson<String?>(json['originalLanguage']),
+      metadataOverridden: serializer.fromJson<bool>(json['metadataOverridden']),
     );
   }
   @override
@@ -1100,6 +1136,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       'voteAverage': serializer.toJson<double?>(voteAverage),
       'genres': serializer.toJson<String?>(genres),
       'originalLanguage': serializer.toJson<String?>(originalLanguage),
+      'metadataOverridden': serializer.toJson<bool>(metadataOverridden),
     };
   }
 
@@ -1125,6 +1162,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     Value<double?> voteAverage = const Value.absent(),
     Value<String?> genres = const Value.absent(),
     Value<String?> originalLanguage = const Value.absent(),
+    bool? metadataOverridden,
   }) => MediaFile(
     id: id ?? this.id,
     filePath: filePath ?? this.filePath,
@@ -1155,6 +1193,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     originalLanguage: originalLanguage.present
         ? originalLanguage.value
         : this.originalLanguage,
+    metadataOverridden: metadataOverridden ?? this.metadataOverridden,
   );
   MediaFile copyWithCompanion(MediaFilesCompanion data) {
     return MediaFile(
@@ -1203,6 +1242,9 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       originalLanguage: data.originalLanguage.present
           ? data.originalLanguage.value
           : this.originalLanguage,
+      metadataOverridden: data.metadataOverridden.present
+          ? data.metadataOverridden.value
+          : this.metadataOverridden,
     );
   }
 
@@ -1229,7 +1271,8 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           ..write('releaseYear: $releaseYear, ')
           ..write('voteAverage: $voteAverage, ')
           ..write('genres: $genres, ')
-          ..write('originalLanguage: $originalLanguage')
+          ..write('originalLanguage: $originalLanguage, ')
+          ..write('metadataOverridden: $metadataOverridden')
           ..write(')'))
         .toString();
   }
@@ -1257,6 +1300,7 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     voteAverage,
     genres,
     originalLanguage,
+    metadataOverridden,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1282,7 +1326,8 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           other.releaseYear == this.releaseYear &&
           other.voteAverage == this.voteAverage &&
           other.genres == this.genres &&
-          other.originalLanguage == this.originalLanguage);
+          other.originalLanguage == this.originalLanguage &&
+          other.metadataOverridden == this.metadataOverridden);
 }
 
 class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
@@ -1307,6 +1352,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
   final Value<double?> voteAverage;
   final Value<String?> genres;
   final Value<String?> originalLanguage;
+  final Value<bool> metadataOverridden;
   const MediaFilesCompanion({
     this.id = const Value.absent(),
     this.filePath = const Value.absent(),
@@ -1329,6 +1375,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     this.voteAverage = const Value.absent(),
     this.genres = const Value.absent(),
     this.originalLanguage = const Value.absent(),
+    this.metadataOverridden = const Value.absent(),
   });
   MediaFilesCompanion.insert({
     this.id = const Value.absent(),
@@ -1352,6 +1399,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     this.voteAverage = const Value.absent(),
     this.genres = const Value.absent(),
     this.originalLanguage = const Value.absent(),
+    this.metadataOverridden = const Value.absent(),
   }) : filePath = Value(filePath),
        fileName = Value(fileName),
        fileExtension = Value(fileExtension),
@@ -1380,6 +1428,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Expression<double>? voteAverage,
     Expression<String>? genres,
     Expression<String>? originalLanguage,
+    Expression<bool>? metadataOverridden,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1403,6 +1452,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       if (voteAverage != null) 'vote_average': voteAverage,
       if (genres != null) 'genres': genres,
       if (originalLanguage != null) 'original_language': originalLanguage,
+      if (metadataOverridden != null) 'metadata_overridden': metadataOverridden,
     });
   }
 
@@ -1428,6 +1478,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Value<double?>? voteAverage,
     Value<String?>? genres,
     Value<String?>? originalLanguage,
+    Value<bool>? metadataOverridden,
   }) {
     return MediaFilesCompanion(
       id: id ?? this.id,
@@ -1451,6 +1502,7 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       voteAverage: voteAverage ?? this.voteAverage,
       genres: genres ?? this.genres,
       originalLanguage: originalLanguage ?? this.originalLanguage,
+      metadataOverridden: metadataOverridden ?? this.metadataOverridden,
     );
   }
 
@@ -1520,6 +1572,9 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     if (originalLanguage.present) {
       map['original_language'] = Variable<String>(originalLanguage.value);
     }
+    if (metadataOverridden.present) {
+      map['metadata_overridden'] = Variable<bool>(metadataOverridden.value);
+    }
     return map;
   }
 
@@ -1546,7 +1601,8 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
           ..write('releaseYear: $releaseYear, ')
           ..write('voteAverage: $voteAverage, ')
           ..write('genres: $genres, ')
-          ..write('originalLanguage: $originalLanguage')
+          ..write('originalLanguage: $originalLanguage, ')
+          ..write('metadataOverridden: $metadataOverridden')
           ..write(')'))
         .toString();
   }
@@ -1892,6 +1948,7 @@ typedef $$MediaFilesTableCreateCompanionBuilder =
       Value<double?> voteAverage,
       Value<String?> genres,
       Value<String?> originalLanguage,
+      Value<bool> metadataOverridden,
     });
 typedef $$MediaFilesTableUpdateCompanionBuilder =
     MediaFilesCompanion Function({
@@ -1916,6 +1973,7 @@ typedef $$MediaFilesTableUpdateCompanionBuilder =
       Value<double?> voteAverage,
       Value<String?> genres,
       Value<String?> originalLanguage,
+      Value<bool> metadataOverridden,
     });
 
 final class $$MediaFilesTableReferences
@@ -2054,6 +2112,11 @@ class $$MediaFilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get metadataOverridden => $composableBuilder(
+    column: $table.metadataOverridden,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LibraryFoldersTableFilterComposer get libraryFolderId {
     final $$LibraryFoldersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -2187,6 +2250,11 @@ class $$MediaFilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get metadataOverridden => $composableBuilder(
+    column: $table.metadataOverridden,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LibraryFoldersTableOrderingComposer get libraryFolderId {
     final $$LibraryFoldersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2302,6 +2370,11 @@ class $$MediaFilesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get metadataOverridden => $composableBuilder(
+    column: $table.metadataOverridden,
+    builder: (column) => column,
+  );
+
   $$LibraryFoldersTableAnnotationComposer get libraryFolderId {
     final $$LibraryFoldersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -2375,6 +2448,7 @@ class $$MediaFilesTableTableManager
                 Value<double?> voteAverage = const Value.absent(),
                 Value<String?> genres = const Value.absent(),
                 Value<String?> originalLanguage = const Value.absent(),
+                Value<bool> metadataOverridden = const Value.absent(),
               }) => MediaFilesCompanion(
                 id: id,
                 filePath: filePath,
@@ -2397,6 +2471,7 @@ class $$MediaFilesTableTableManager
                 voteAverage: voteAverage,
                 genres: genres,
                 originalLanguage: originalLanguage,
+                metadataOverridden: metadataOverridden,
               ),
           createCompanionCallback:
               ({
@@ -2421,6 +2496,7 @@ class $$MediaFilesTableTableManager
                 Value<double?> voteAverage = const Value.absent(),
                 Value<String?> genres = const Value.absent(),
                 Value<String?> originalLanguage = const Value.absent(),
+                Value<bool> metadataOverridden = const Value.absent(),
               }) => MediaFilesCompanion.insert(
                 id: id,
                 filePath: filePath,
@@ -2443,6 +2519,7 @@ class $$MediaFilesTableTableManager
                 voteAverage: voteAverage,
                 genres: genres,
                 originalLanguage: originalLanguage,
+                metadataOverridden: metadataOverridden,
               ),
           withReferenceMapper: (p0) => p0
               .map(
