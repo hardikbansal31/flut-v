@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter_video/core/database/database.dart';
+import 'package:flutter_video/features/library/scanner_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:watcher/watcher.dart';
 
@@ -9,11 +11,6 @@ class LibraryWatcherService {
   final Map<int, StreamSubscription> _subscriptions = {};
 
   LibraryWatcherService(this._db);
-
-  static const _supportedExtensions = {
-    '.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', 
-    '.m4v', '.ts', '.mpg', '.mpeg', '.3gp', '.ogv'
-  };
 
   final Map<String, Timer> _debouncers = {};
 
@@ -32,31 +29,42 @@ class LibraryWatcherService {
     if (!dir.existsSync()) return;
 
     final watcher = DirectoryWatcher(folder.path);
-    _subscriptions[folder.id] = watcher.events.listen((event) async {
-      final ext = p.extension(event.path).toLowerCase();
-      if (!_supportedExtensions.contains(ext)) return;
+    _subscriptions[folder.id] = watcher.events.listen(
+      (event) async {
+        final ext = p.extension(event.path).toLowerCase();
+        if (!LibraryScannerService.supportedExtensions.contains(ext)) return;
 
-      if (event.type == ChangeType.REMOVE) {
-        _debouncers[event.path]?.cancel();
-        _debouncers.remove(event.path);
-        await _db.removeMediaFileByPath(event.path);
-      } else if (event.type == ChangeType.ADD || event.type == ChangeType.MODIFY) {
-        _debounceEvent(event.path, () async {
-          final file = File(event.path);
-          if (await file.exists()) {
-            final stat = await file.stat();
-            await _db.upsertMediaFile(
-              filePath: event.path,
-              fileName: p.basenameWithoutExtension(event.path),
-              fileExtension: ext.substring(1),
-              fileSizeBytes: stat.size,
-              libraryFolderId: folder.id,
-              lastModified: stat.modified,
-            );
-          }
-        });
-      }
-    });
+        if (event.type == ChangeType.REMOVE) {
+          _debouncers[event.path]?.cancel();
+          _debouncers.remove(event.path);
+          await _db.removeMediaFileByPath(event.path);
+        } else if (event.type == ChangeType.ADD || event.type == ChangeType.MODIFY) {
+          _debounceEvent(event.path, () async {
+            final file = File(event.path);
+            if (await file.exists()) {
+              final stat = await file.stat();
+              await _db.upsertMediaFile(
+                filePath: event.path,
+                fileName: p.basenameWithoutExtension(event.path),
+                fileExtension: ext.substring(1),
+                fileSizeBytes: stat.size,
+                libraryFolderId: folder.id,
+                lastModified: stat.modified,
+              );
+            }
+          });
+        }
+      },
+      onError: (Object error) {
+        developer.log(
+          'Watcher error for folder ${folder.path} (id=${folder.id}): $error. '
+          'Unwatching folder.',
+          name: 'LibraryWatcherService',
+          level: 900,
+        );
+        unwatchFolder(folder.id);
+      },
+    );
   }
 
   void unwatchFolder(int folderId) {

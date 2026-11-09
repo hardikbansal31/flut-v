@@ -42,7 +42,10 @@ class SeriesItem {
   /// All episode files belonging to this series, sorted by season/episode.
   final List<MediaFile> episodes;
 
-  const SeriesItem({
+  /// Precomputed map of season number to episode files for fast rendering.
+  final Map<int, List<MediaFile>> episodesBySeason;
+
+  SeriesItem({
     required this.groupKey,
     required this.seriesTitle,
     this.posterUrl,
@@ -53,76 +56,61 @@ class SeriesItem {
     this.genres = const [],
     this.type = MediaType.tvShow,
     required this.episodes,
-  });
+    Map<int, List<MediaFile>>? episodesBySeason,
+  }) : episodesBySeason = episodesBySeason ?? _computeEpisodesBySeason(episodes);
+
+  static Map<int, List<MediaFile>> _computeEpisodesBySeason(List<MediaFile> episodes) {
+    final map = <int, List<MediaFile>>{};
+    for (final file in episodes) {
+      final s = seasonFor(file);
+      map.putIfAbsent(s, () => []).add(file);
+    }
+    return map;
+  }
 
   /// The total number of episodes in this series.
   int get episodeCount => episodes.length;
 
-  // Season/episode extraction from tmdbTitle
-
-  /// Regular expression to extract season and episode from the stored
-  /// tmdbTitle format: "Series Name - S02E04 - Episode Name"
-  static final _seCodePattern = RegExp(r'S(\d+)E(\d+)');
-
-  /// Extract the episode label (e.g. "S02E04") from a media file's tmdbTitle.
+  /// Extract the episode label (e.g. "S02E04") from the media file's columns.
   static String? episodeLabelFor(MediaFile file) {
-    if (file.tmdbTitle != null) {
-      final match = _seCodePattern.firstMatch(file.tmdbTitle!);
-      if (match != null) {
-        final s = int.parse(match.group(1)!).toString().padLeft(2, '0');
-        final e = int.parse(match.group(2)!).toString().padLeft(2, '0');
-        return 'S${s}E$e';
-      }
-    }
-    // Fallback: parse filename for anime/uncategorized without strict tags
-    final parsed = FilenameParser.parse(file.fileName);
-    if (parsed.season != null && parsed.episode != null) {
-      final s = parsed.season!.toString().padLeft(2, '0');
-      final e = parsed.episode!.toString().padLeft(2, '0');
-      return 'S${s}E$e';
+    final s = file.seasonNumber ?? FilenameParser.parse(file.fileName).season;
+    final e = file.episodeNumber ?? FilenameParser.parse(file.fileName).episode;
+    if (s != null && e != null) {
+      return 'S${s.toString().padLeft(2, '0')}E${e.toString().padLeft(2, '0')}';
     }
     return null;
   }
 
-  /// Extract the season number from a media file's tmdbTitle.
+  /// Extract season number from the column with parser fallback.
   static int seasonFor(MediaFile file) {
-    if (file.tmdbTitle != null) {
-      final match = _seCodePattern.firstMatch(file.tmdbTitle!);
-      if (match != null) return int.parse(match.group(1)!);
-    }
-    // Fallback
-    final parsed = FilenameParser.parse(file.fileName);
-    return parsed.season ?? 1;
+    return file.seasonNumber ?? FilenameParser.parse(file.fileName).season ?? 1;
   }
 
-  /// Extract the episode number from a media file's tmdbTitle.
+  /// Extract episode number from the column with parser fallback.
   static int episodeNumberFor(MediaFile file) {
-    if (file.tmdbTitle != null) {
-      final match = _seCodePattern.firstMatch(file.tmdbTitle!);
-      if (match != null) return int.parse(match.group(2)!);
-    }
-    // Fallback
-    final parsed = FilenameParser.parse(file.fileName);
-    return parsed.episode ?? 0;
+    return file.episodeNumber ?? FilenameParser.parse(file.fileName).episode ?? 0;
   }
 
-  /// Extract the episode name (after "S02E04 - ") from tmdbTitle.
+  /// Extract episode name from tmdbTitle or fallback.
   static String? episodeNameFor(MediaFile file) {
     final title = file.tmdbTitle;
-    if (title == null) return null;
-    // Format: "Series Name - S02E04 - Episode Name"
-    final match = RegExp(r'- S\d+E\d+ - (.+)$').firstMatch(title);
-    return match?.group(1);
+    if (title != null) {
+      final match = RegExp(r'- S\d+E\d+ - (.+)$').firstMatch(title);
+      if (match != null) return match.group(1);
+    }
+    return null;
   }
 
-  /// Extract the clean series title (before " - S02E04") from tmdbTitle.
+  /// Extract clean series title from seriesTitle column with parser fallback.
   static String seriesTitleFor(MediaFile file) {
+    if (file.seriesTitle != null && file.seriesTitle!.isNotEmpty) {
+      return file.seriesTitle!;
+    }
     if (file.tmdbTitle != null) {
       final match = RegExp(r'^(.+?)\s*-\s*S\d+E\d+').firstMatch(file.tmdbTitle!);
       if (match != null) return match.group(1)!.trim();
       return file.tmdbTitle!;
     }
-    // Fallback: use robust FilenameParser
     return FilenameParser.parse(file.fileName).cleanTitle;
   }
 
@@ -150,7 +138,7 @@ class SeriesItem {
     for (final entry in groups.entries) {
       final episodeFiles = entry.value;
 
-      // Sort by season, then episode number
+      // Sort by season, then episode number (direct integer comparisons, no regex)
       episodeFiles.sort((a, b) {
         final sa = seasonFor(a);
         final sb = seasonFor(b);
@@ -193,13 +181,9 @@ class SeriesItem {
   }
 
   /// Get distinct season numbers in this series.
-  List<int> get seasons {
-    final s = episodes.map(seasonFor).toSet().toList()..sort();
-    return s;
-  }
+  List<int> get seasons => episodesBySeason.keys.toList()..sort();
 
-  /// Get episodes for a specific season.
-  List<MediaFile> episodesForSeason(int season) {
-    return episodes.where((f) => seasonFor(f) == season).toList();
-  }
+  /// Get episodes for a specific season from precomputed map.
+  List<MediaFile> episodesForSeason(int season) =>
+      episodesBySeason[season] ?? const [];
 }

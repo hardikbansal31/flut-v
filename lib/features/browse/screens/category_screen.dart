@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_video/core/database/database.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/models/media_item.dart';
 import 'package:flutter_video/features/browse/models/series_item.dart';
@@ -49,8 +50,8 @@ class CategoryScreen extends ConsumerWidget {
       items = allMediaItems.where((item) => item.type == MediaType.uncategorized).toList();
     } else if (title == 'Recently Added') {
       final recentFiles = ref.watch(recentlyAddedFilesProvider).value ?? [];
-      final recentMovies = recentFiles.where((f) => f.mediaType != 'tv' && f.mediaType != 'anime').toList();
-      final recentTv = recentFiles.where((f) => f.mediaType == 'tv' || f.mediaType == 'anime').toList();
+      final recentMovies = recentFiles.where((f) => !f.isSeries).toList();
+      final recentTv = recentFiles.where((f) => f.isSeries).toList();
       final recentSeriesList = SeriesItem.groupFiles(recentTv);
       
       items = [
@@ -88,7 +89,7 @@ class CategoryScreen extends ConsumerWidget {
                     } else {
                       // Need to match series from the correct list
                       final matchingSeries = (title == 'Recently Added' 
-                          ? SeriesItem.groupFiles((ref.read(recentlyAddedFilesProvider).value ?? []).where((f) => f.mediaType == 'tv' || f.mediaType == 'anime').toList())
+                          ? SeriesItem.groupFiles((ref.read(recentlyAddedFilesProvider).value ?? []).where((f) => f.isSeries).toList())
                           : allSeries).firstWhere((s) => s.groupKey == item.id);
                       Navigator.push(context, MaterialPageRoute(builder: (_) => MediaDetailScreen(series: matchingSeries)));
                     }

@@ -53,8 +53,41 @@ class $LibraryFoldersTable extends LibraryFolders
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _isAvailableMeta = const VerificationMeta(
+    'isAvailable',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, path, label, addedAt];
+  late final GeneratedColumn<bool> isAvailable = GeneratedColumn<bool>(
+    'is_available',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_available" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _lastSeenAtMeta = const VerificationMeta(
+    'lastSeenAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSeenAt = GeneratedColumn<DateTime>(
+    'last_seen_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    path,
+    label,
+    addedAt,
+    isAvailable,
+    lastSeenAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -90,6 +123,24 @@ class $LibraryFoldersTable extends LibraryFolders
         addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta),
       );
     }
+    if (data.containsKey('is_available')) {
+      context.handle(
+        _isAvailableMeta,
+        isAvailable.isAcceptableOrUnknown(
+          data['is_available']!,
+          _isAvailableMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_seen_at')) {
+      context.handle(
+        _lastSeenAtMeta,
+        lastSeenAt.isAcceptableOrUnknown(
+          data['last_seen_at']!,
+          _lastSeenAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -115,6 +166,14 @@ class $LibraryFoldersTable extends LibraryFolders
         DriftSqlType.dateTime,
         data['${effectivePrefix}added_at'],
       )!,
+      isAvailable: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_available'],
+      )!,
+      lastSeenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_seen_at'],
+      ),
     );
   }
 
@@ -136,11 +195,23 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
 
   /// When this folder was first added.
   final DateTime addedAt;
+
+  /// Whether the folder is currently accessible on disk.
+  /// When a folder becomes inaccessible (e.g. NAS disconnected, drive
+  /// unmounted), this is set to `false` and its media rows are preserved.
+  /// Only an explicit "remove folder" action deletes rows.
+  final bool isAvailable;
+
+  /// Timestamp of the last time the folder was successfully seen on disk
+  /// during a scan or prune operation.
+  final DateTime? lastSeenAt;
   const LibraryFolder({
     required this.id,
     required this.path,
     this.label,
     required this.addedAt,
+    required this.isAvailable,
+    this.lastSeenAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -151,6 +222,10 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
       map['label'] = Variable<String>(label);
     }
     map['added_at'] = Variable<DateTime>(addedAt);
+    map['is_available'] = Variable<bool>(isAvailable);
+    if (!nullToAbsent || lastSeenAt != null) {
+      map['last_seen_at'] = Variable<DateTime>(lastSeenAt);
+    }
     return map;
   }
 
@@ -162,6 +237,10 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
           ? const Value.absent()
           : Value(label),
       addedAt: Value(addedAt),
+      isAvailable: Value(isAvailable),
+      lastSeenAt: lastSeenAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSeenAt),
     );
   }
 
@@ -175,6 +254,8 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
       path: serializer.fromJson<String>(json['path']),
       label: serializer.fromJson<String?>(json['label']),
       addedAt: serializer.fromJson<DateTime>(json['addedAt']),
+      isAvailable: serializer.fromJson<bool>(json['isAvailable']),
+      lastSeenAt: serializer.fromJson<DateTime?>(json['lastSeenAt']),
     );
   }
   @override
@@ -185,6 +266,8 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
       'path': serializer.toJson<String>(path),
       'label': serializer.toJson<String?>(label),
       'addedAt': serializer.toJson<DateTime>(addedAt),
+      'isAvailable': serializer.toJson<bool>(isAvailable),
+      'lastSeenAt': serializer.toJson<DateTime?>(lastSeenAt),
     };
   }
 
@@ -193,11 +276,15 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
     String? path,
     Value<String?> label = const Value.absent(),
     DateTime? addedAt,
+    bool? isAvailable,
+    Value<DateTime?> lastSeenAt = const Value.absent(),
   }) => LibraryFolder(
     id: id ?? this.id,
     path: path ?? this.path,
     label: label.present ? label.value : this.label,
     addedAt: addedAt ?? this.addedAt,
+    isAvailable: isAvailable ?? this.isAvailable,
+    lastSeenAt: lastSeenAt.present ? lastSeenAt.value : this.lastSeenAt,
   );
   LibraryFolder copyWithCompanion(LibraryFoldersCompanion data) {
     return LibraryFolder(
@@ -205,6 +292,12 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
       path: data.path.present ? data.path.value : this.path,
       label: data.label.present ? data.label.value : this.label,
       addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
+      isAvailable: data.isAvailable.present
+          ? data.isAvailable.value
+          : this.isAvailable,
+      lastSeenAt: data.lastSeenAt.present
+          ? data.lastSeenAt.value
+          : this.lastSeenAt,
     );
   }
 
@@ -214,13 +307,16 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
           ..write('id: $id, ')
           ..write('path: $path, ')
           ..write('label: $label, ')
-          ..write('addedAt: $addedAt')
+          ..write('addedAt: $addedAt, ')
+          ..write('isAvailable: $isAvailable, ')
+          ..write('lastSeenAt: $lastSeenAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, path, label, addedAt);
+  int get hashCode =>
+      Object.hash(id, path, label, addedAt, isAvailable, lastSeenAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -228,7 +324,9 @@ class LibraryFolder extends DataClass implements Insertable<LibraryFolder> {
           other.id == this.id &&
           other.path == this.path &&
           other.label == this.label &&
-          other.addedAt == this.addedAt);
+          other.addedAt == this.addedAt &&
+          other.isAvailable == this.isAvailable &&
+          other.lastSeenAt == this.lastSeenAt);
 }
 
 class LibraryFoldersCompanion extends UpdateCompanion<LibraryFolder> {
@@ -236,29 +334,39 @@ class LibraryFoldersCompanion extends UpdateCompanion<LibraryFolder> {
   final Value<String> path;
   final Value<String?> label;
   final Value<DateTime> addedAt;
+  final Value<bool> isAvailable;
+  final Value<DateTime?> lastSeenAt;
   const LibraryFoldersCompanion({
     this.id = const Value.absent(),
     this.path = const Value.absent(),
     this.label = const Value.absent(),
     this.addedAt = const Value.absent(),
+    this.isAvailable = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
   });
   LibraryFoldersCompanion.insert({
     this.id = const Value.absent(),
     required String path,
     this.label = const Value.absent(),
     this.addedAt = const Value.absent(),
+    this.isAvailable = const Value.absent(),
+    this.lastSeenAt = const Value.absent(),
   }) : path = Value(path);
   static Insertable<LibraryFolder> custom({
     Expression<int>? id,
     Expression<String>? path,
     Expression<String>? label,
     Expression<DateTime>? addedAt,
+    Expression<bool>? isAvailable,
+    Expression<DateTime>? lastSeenAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (path != null) 'path': path,
       if (label != null) 'label': label,
       if (addedAt != null) 'added_at': addedAt,
+      if (isAvailable != null) 'is_available': isAvailable,
+      if (lastSeenAt != null) 'last_seen_at': lastSeenAt,
     });
   }
 
@@ -267,12 +375,16 @@ class LibraryFoldersCompanion extends UpdateCompanion<LibraryFolder> {
     Value<String>? path,
     Value<String?>? label,
     Value<DateTime>? addedAt,
+    Value<bool>? isAvailable,
+    Value<DateTime?>? lastSeenAt,
   }) {
     return LibraryFoldersCompanion(
       id: id ?? this.id,
       path: path ?? this.path,
       label: label ?? this.label,
       addedAt: addedAt ?? this.addedAt,
+      isAvailable: isAvailable ?? this.isAvailable,
+      lastSeenAt: lastSeenAt ?? this.lastSeenAt,
     );
   }
 
@@ -291,6 +403,12 @@ class LibraryFoldersCompanion extends UpdateCompanion<LibraryFolder> {
     if (addedAt.present) {
       map['added_at'] = Variable<DateTime>(addedAt.value);
     }
+    if (isAvailable.present) {
+      map['is_available'] = Variable<bool>(isAvailable.value);
+    }
+    if (lastSeenAt.present) {
+      map['last_seen_at'] = Variable<DateTime>(lastSeenAt.value);
+    }
     return map;
   }
 
@@ -300,7 +418,9 @@ class LibraryFoldersCompanion extends UpdateCompanion<LibraryFolder> {
           ..write('id: $id, ')
           ..write('path: $path, ')
           ..write('label: $label, ')
-          ..write('addedAt: $addedAt')
+          ..write('addedAt: $addedAt, ')
+          ..write('isAvailable: $isAvailable, ')
+          ..write('lastSeenAt: $lastSeenAt')
           ..write(')'))
         .toString();
   }
@@ -561,6 +681,63 @@ class $MediaFilesTable extends MediaFiles
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _metadataStatusMeta = const VerificationMeta(
+    'metadataStatus',
+  );
+  @override
+  late final GeneratedColumn<String> metadataStatus = GeneratedColumn<String>(
+    'metadata_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _lastAttemptAtMeta = const VerificationMeta(
+    'lastAttemptAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastAttemptAt =
+      GeneratedColumn<DateTime>(
+        'last_attempt_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _seasonNumberMeta = const VerificationMeta(
+    'seasonNumber',
+  );
+  @override
+  late final GeneratedColumn<int> seasonNumber = GeneratedColumn<int>(
+    'season_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _episodeNumberMeta = const VerificationMeta(
+    'episodeNumber',
+  );
+  @override
+  late final GeneratedColumn<int> episodeNumber = GeneratedColumn<int>(
+    'episode_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _seriesTitleMeta = const VerificationMeta(
+    'seriesTitle',
+  );
+  @override
+  late final GeneratedColumn<String> seriesTitle = GeneratedColumn<String>(
+    'series_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -585,6 +762,11 @@ class $MediaFilesTable extends MediaFiles
     genres,
     originalLanguage,
     metadataOverridden,
+    metadataStatus,
+    lastAttemptAt,
+    seasonNumber,
+    episodeNumber,
+    seriesTitle,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -775,6 +957,51 @@ class $MediaFilesTable extends MediaFiles
         ),
       );
     }
+    if (data.containsKey('metadata_status')) {
+      context.handle(
+        _metadataStatusMeta,
+        metadataStatus.isAcceptableOrUnknown(
+          data['metadata_status']!,
+          _metadataStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_attempt_at')) {
+      context.handle(
+        _lastAttemptAtMeta,
+        lastAttemptAt.isAcceptableOrUnknown(
+          data['last_attempt_at']!,
+          _lastAttemptAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('season_number')) {
+      context.handle(
+        _seasonNumberMeta,
+        seasonNumber.isAcceptableOrUnknown(
+          data['season_number']!,
+          _seasonNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('episode_number')) {
+      context.handle(
+        _episodeNumberMeta,
+        episodeNumber.isAcceptableOrUnknown(
+          data['episode_number']!,
+          _episodeNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('series_title')) {
+      context.handle(
+        _seriesTitleMeta,
+        seriesTitle.isAcceptableOrUnknown(
+          data['series_title']!,
+          _seriesTitleMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -872,6 +1099,26 @@ class $MediaFilesTable extends MediaFiles
         DriftSqlType.bool,
         data['${effectivePrefix}metadata_overridden'],
       )!,
+      metadataStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}metadata_status'],
+      )!,
+      lastAttemptAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_attempt_at'],
+      ),
+      seasonNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}season_number'],
+      ),
+      episodeNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}episode_number'],
+      ),
+      seriesTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_title'],
+      ),
     );
   }
 
@@ -950,6 +1197,21 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
   /// Whether this file's metadata was manually overridden by the user.
   /// If true, auto-scans and library refresh will not touch this file.
   final bool metadataOverridden;
+
+  /// Status of TMDB metadata resolution: 'pending', 'matched', 'notFound', 'error'.
+  final String metadataStatus;
+
+  /// Timestamp of the last metadata fetch attempt.
+  final DateTime? lastAttemptAt;
+
+  /// Season number if this file is part of a TV or anime series.
+  final int? seasonNumber;
+
+  /// Episode number if this file is part of a TV or anime series.
+  final int? episodeNumber;
+
+  /// Title of the series if this file is part of a TV or anime series.
+  final String? seriesTitle;
   const MediaFile({
     required this.id,
     required this.filePath,
@@ -973,6 +1235,11 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     this.genres,
     this.originalLanguage,
     required this.metadataOverridden,
+    required this.metadataStatus,
+    this.lastAttemptAt,
+    this.seasonNumber,
+    this.episodeNumber,
+    this.seriesTitle,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1025,6 +1292,19 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       map['original_language'] = Variable<String>(originalLanguage);
     }
     map['metadata_overridden'] = Variable<bool>(metadataOverridden);
+    map['metadata_status'] = Variable<String>(metadataStatus);
+    if (!nullToAbsent || lastAttemptAt != null) {
+      map['last_attempt_at'] = Variable<DateTime>(lastAttemptAt);
+    }
+    if (!nullToAbsent || seasonNumber != null) {
+      map['season_number'] = Variable<int>(seasonNumber);
+    }
+    if (!nullToAbsent || episodeNumber != null) {
+      map['episode_number'] = Variable<int>(episodeNumber);
+    }
+    if (!nullToAbsent || seriesTitle != null) {
+      map['series_title'] = Variable<String>(seriesTitle);
+    }
     return map;
   }
 
@@ -1078,6 +1358,19 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           ? const Value.absent()
           : Value(originalLanguage),
       metadataOverridden: Value(metadataOverridden),
+      metadataStatus: Value(metadataStatus),
+      lastAttemptAt: lastAttemptAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAttemptAt),
+      seasonNumber: seasonNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seasonNumber),
+      episodeNumber: episodeNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(episodeNumber),
+      seriesTitle: seriesTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seriesTitle),
     );
   }
 
@@ -1109,6 +1402,11 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       genres: serializer.fromJson<String?>(json['genres']),
       originalLanguage: serializer.fromJson<String?>(json['originalLanguage']),
       metadataOverridden: serializer.fromJson<bool>(json['metadataOverridden']),
+      metadataStatus: serializer.fromJson<String>(json['metadataStatus']),
+      lastAttemptAt: serializer.fromJson<DateTime?>(json['lastAttemptAt']),
+      seasonNumber: serializer.fromJson<int?>(json['seasonNumber']),
+      episodeNumber: serializer.fromJson<int?>(json['episodeNumber']),
+      seriesTitle: serializer.fromJson<String?>(json['seriesTitle']),
     );
   }
   @override
@@ -1137,6 +1435,11 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       'genres': serializer.toJson<String?>(genres),
       'originalLanguage': serializer.toJson<String?>(originalLanguage),
       'metadataOverridden': serializer.toJson<bool>(metadataOverridden),
+      'metadataStatus': serializer.toJson<String>(metadataStatus),
+      'lastAttemptAt': serializer.toJson<DateTime?>(lastAttemptAt),
+      'seasonNumber': serializer.toJson<int?>(seasonNumber),
+      'episodeNumber': serializer.toJson<int?>(episodeNumber),
+      'seriesTitle': serializer.toJson<String?>(seriesTitle),
     };
   }
 
@@ -1163,6 +1466,11 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     Value<String?> genres = const Value.absent(),
     Value<String?> originalLanguage = const Value.absent(),
     bool? metadataOverridden,
+    String? metadataStatus,
+    Value<DateTime?> lastAttemptAt = const Value.absent(),
+    Value<int?> seasonNumber = const Value.absent(),
+    Value<int?> episodeNumber = const Value.absent(),
+    Value<String?> seriesTitle = const Value.absent(),
   }) => MediaFile(
     id: id ?? this.id,
     filePath: filePath ?? this.filePath,
@@ -1194,6 +1502,15 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
         ? originalLanguage.value
         : this.originalLanguage,
     metadataOverridden: metadataOverridden ?? this.metadataOverridden,
+    metadataStatus: metadataStatus ?? this.metadataStatus,
+    lastAttemptAt: lastAttemptAt.present
+        ? lastAttemptAt.value
+        : this.lastAttemptAt,
+    seasonNumber: seasonNumber.present ? seasonNumber.value : this.seasonNumber,
+    episodeNumber: episodeNumber.present
+        ? episodeNumber.value
+        : this.episodeNumber,
+    seriesTitle: seriesTitle.present ? seriesTitle.value : this.seriesTitle,
   );
   MediaFile copyWithCompanion(MediaFilesCompanion data) {
     return MediaFile(
@@ -1245,6 +1562,21 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
       metadataOverridden: data.metadataOverridden.present
           ? data.metadataOverridden.value
           : this.metadataOverridden,
+      metadataStatus: data.metadataStatus.present
+          ? data.metadataStatus.value
+          : this.metadataStatus,
+      lastAttemptAt: data.lastAttemptAt.present
+          ? data.lastAttemptAt.value
+          : this.lastAttemptAt,
+      seasonNumber: data.seasonNumber.present
+          ? data.seasonNumber.value
+          : this.seasonNumber,
+      episodeNumber: data.episodeNumber.present
+          ? data.episodeNumber.value
+          : this.episodeNumber,
+      seriesTitle: data.seriesTitle.present
+          ? data.seriesTitle.value
+          : this.seriesTitle,
     );
   }
 
@@ -1272,7 +1604,12 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           ..write('voteAverage: $voteAverage, ')
           ..write('genres: $genres, ')
           ..write('originalLanguage: $originalLanguage, ')
-          ..write('metadataOverridden: $metadataOverridden')
+          ..write('metadataOverridden: $metadataOverridden, ')
+          ..write('metadataStatus: $metadataStatus, ')
+          ..write('lastAttemptAt: $lastAttemptAt, ')
+          ..write('seasonNumber: $seasonNumber, ')
+          ..write('episodeNumber: $episodeNumber, ')
+          ..write('seriesTitle: $seriesTitle')
           ..write(')'))
         .toString();
   }
@@ -1301,6 +1638,11 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
     genres,
     originalLanguage,
     metadataOverridden,
+    metadataStatus,
+    lastAttemptAt,
+    seasonNumber,
+    episodeNumber,
+    seriesTitle,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1327,7 +1669,12 @@ class MediaFile extends DataClass implements Insertable<MediaFile> {
           other.voteAverage == this.voteAverage &&
           other.genres == this.genres &&
           other.originalLanguage == this.originalLanguage &&
-          other.metadataOverridden == this.metadataOverridden);
+          other.metadataOverridden == this.metadataOverridden &&
+          other.metadataStatus == this.metadataStatus &&
+          other.lastAttemptAt == this.lastAttemptAt &&
+          other.seasonNumber == this.seasonNumber &&
+          other.episodeNumber == this.episodeNumber &&
+          other.seriesTitle == this.seriesTitle);
 }
 
 class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
@@ -1353,6 +1700,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
   final Value<String?> genres;
   final Value<String?> originalLanguage;
   final Value<bool> metadataOverridden;
+  final Value<String> metadataStatus;
+  final Value<DateTime?> lastAttemptAt;
+  final Value<int?> seasonNumber;
+  final Value<int?> episodeNumber;
+  final Value<String?> seriesTitle;
   const MediaFilesCompanion({
     this.id = const Value.absent(),
     this.filePath = const Value.absent(),
@@ -1376,6 +1728,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     this.genres = const Value.absent(),
     this.originalLanguage = const Value.absent(),
     this.metadataOverridden = const Value.absent(),
+    this.metadataStatus = const Value.absent(),
+    this.lastAttemptAt = const Value.absent(),
+    this.seasonNumber = const Value.absent(),
+    this.episodeNumber = const Value.absent(),
+    this.seriesTitle = const Value.absent(),
   });
   MediaFilesCompanion.insert({
     this.id = const Value.absent(),
@@ -1400,6 +1757,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     this.genres = const Value.absent(),
     this.originalLanguage = const Value.absent(),
     this.metadataOverridden = const Value.absent(),
+    this.metadataStatus = const Value.absent(),
+    this.lastAttemptAt = const Value.absent(),
+    this.seasonNumber = const Value.absent(),
+    this.episodeNumber = const Value.absent(),
+    this.seriesTitle = const Value.absent(),
   }) : filePath = Value(filePath),
        fileName = Value(fileName),
        fileExtension = Value(fileExtension),
@@ -1429,6 +1791,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Expression<String>? genres,
     Expression<String>? originalLanguage,
     Expression<bool>? metadataOverridden,
+    Expression<String>? metadataStatus,
+    Expression<DateTime>? lastAttemptAt,
+    Expression<int>? seasonNumber,
+    Expression<int>? episodeNumber,
+    Expression<String>? seriesTitle,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1453,6 +1820,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       if (genres != null) 'genres': genres,
       if (originalLanguage != null) 'original_language': originalLanguage,
       if (metadataOverridden != null) 'metadata_overridden': metadataOverridden,
+      if (metadataStatus != null) 'metadata_status': metadataStatus,
+      if (lastAttemptAt != null) 'last_attempt_at': lastAttemptAt,
+      if (seasonNumber != null) 'season_number': seasonNumber,
+      if (episodeNumber != null) 'episode_number': episodeNumber,
+      if (seriesTitle != null) 'series_title': seriesTitle,
     });
   }
 
@@ -1479,6 +1851,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     Value<String?>? genres,
     Value<String?>? originalLanguage,
     Value<bool>? metadataOverridden,
+    Value<String>? metadataStatus,
+    Value<DateTime?>? lastAttemptAt,
+    Value<int?>? seasonNumber,
+    Value<int?>? episodeNumber,
+    Value<String?>? seriesTitle,
   }) {
     return MediaFilesCompanion(
       id: id ?? this.id,
@@ -1503,6 +1880,11 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
       genres: genres ?? this.genres,
       originalLanguage: originalLanguage ?? this.originalLanguage,
       metadataOverridden: metadataOverridden ?? this.metadataOverridden,
+      metadataStatus: metadataStatus ?? this.metadataStatus,
+      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+      seasonNumber: seasonNumber ?? this.seasonNumber,
+      episodeNumber: episodeNumber ?? this.episodeNumber,
+      seriesTitle: seriesTitle ?? this.seriesTitle,
     );
   }
 
@@ -1575,6 +1957,21 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
     if (metadataOverridden.present) {
       map['metadata_overridden'] = Variable<bool>(metadataOverridden.value);
     }
+    if (metadataStatus.present) {
+      map['metadata_status'] = Variable<String>(metadataStatus.value);
+    }
+    if (lastAttemptAt.present) {
+      map['last_attempt_at'] = Variable<DateTime>(lastAttemptAt.value);
+    }
+    if (seasonNumber.present) {
+      map['season_number'] = Variable<int>(seasonNumber.value);
+    }
+    if (episodeNumber.present) {
+      map['episode_number'] = Variable<int>(episodeNumber.value);
+    }
+    if (seriesTitle.present) {
+      map['series_title'] = Variable<String>(seriesTitle.value);
+    }
     return map;
   }
 
@@ -1602,7 +1999,12 @@ class MediaFilesCompanion extends UpdateCompanion<MediaFile> {
           ..write('voteAverage: $voteAverage, ')
           ..write('genres: $genres, ')
           ..write('originalLanguage: $originalLanguage, ')
-          ..write('metadataOverridden: $metadataOverridden')
+          ..write('metadataOverridden: $metadataOverridden, ')
+          ..write('metadataStatus: $metadataStatus, ')
+          ..write('lastAttemptAt: $lastAttemptAt, ')
+          ..write('seasonNumber: $seasonNumber, ')
+          ..write('episodeNumber: $episodeNumber, ')
+          ..write('seriesTitle: $seriesTitle')
           ..write(')'))
         .toString();
   }
@@ -1617,10 +2019,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_media_folder',
     'CREATE INDEX idx_media_folder ON media_files (library_folder_id)',
   );
-  late final Index idxMediaFilepath = Index(
-    'idx_media_filepath',
-    'CREATE INDEX idx_media_filepath ON media_files (file_path)',
-  );
   late final Index idxMediaTmdb = Index(
     'idx_media_tmdb',
     'CREATE INDEX idx_media_tmdb ON media_files (tmdb_id)',
@@ -1633,7 +2031,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     libraryFolders,
     mediaFiles,
     idxMediaFolder,
-    idxMediaFilepath,
     idxMediaTmdb,
   ];
 }
@@ -1644,6 +2041,8 @@ typedef $$LibraryFoldersTableCreateCompanionBuilder =
       required String path,
       Value<String?> label,
       Value<DateTime> addedAt,
+      Value<bool> isAvailable,
+      Value<DateTime?> lastSeenAt,
     });
 typedef $$LibraryFoldersTableUpdateCompanionBuilder =
     LibraryFoldersCompanion Function({
@@ -1651,6 +2050,8 @@ typedef $$LibraryFoldersTableUpdateCompanionBuilder =
       Value<String> path,
       Value<String?> label,
       Value<DateTime> addedAt,
+      Value<bool> isAvailable,
+      Value<DateTime?> lastSeenAt,
     });
 
 final class $$LibraryFoldersTableReferences
@@ -1712,6 +2113,16 @@ class $$LibraryFoldersTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isAvailable => $composableBuilder(
+    column: $table.isAvailable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> mediaFilesRefs(
     Expression<bool> Function($$MediaFilesTableFilterComposer f) f,
   ) {
@@ -1766,6 +2177,16 @@ class $$LibraryFoldersTableOrderingComposer
     column: $table.addedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isAvailable => $composableBuilder(
+    column: $table.isAvailable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LibraryFoldersTableAnnotationComposer
@@ -1788,6 +2209,16 @@ class $$LibraryFoldersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get addedAt =>
       $composableBuilder(column: $table.addedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isAvailable => $composableBuilder(
+    column: $table.isAvailable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSeenAt => $composableBuilder(
+    column: $table.lastSeenAt,
+    builder: (column) => column,
+  );
 
   Expression<T> mediaFilesRefs<T extends Object>(
     Expression<T> Function($$MediaFilesTableAnnotationComposer a) f,
@@ -1849,11 +2280,15 @@ class $$LibraryFoldersTableTableManager
                 Value<String> path = const Value.absent(),
                 Value<String?> label = const Value.absent(),
                 Value<DateTime> addedAt = const Value.absent(),
+                Value<bool> isAvailable = const Value.absent(),
+                Value<DateTime?> lastSeenAt = const Value.absent(),
               }) => LibraryFoldersCompanion(
                 id: id,
                 path: path,
                 label: label,
                 addedAt: addedAt,
+                isAvailable: isAvailable,
+                lastSeenAt: lastSeenAt,
               ),
           createCompanionCallback:
               ({
@@ -1861,11 +2296,15 @@ class $$LibraryFoldersTableTableManager
                 required String path,
                 Value<String?> label = const Value.absent(),
                 Value<DateTime> addedAt = const Value.absent(),
+                Value<bool> isAvailable = const Value.absent(),
+                Value<DateTime?> lastSeenAt = const Value.absent(),
               }) => LibraryFoldersCompanion.insert(
                 id: id,
                 path: path,
                 label: label,
                 addedAt: addedAt,
+                isAvailable: isAvailable,
+                lastSeenAt: lastSeenAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -1949,6 +2388,11 @@ typedef $$MediaFilesTableCreateCompanionBuilder =
       Value<String?> genres,
       Value<String?> originalLanguage,
       Value<bool> metadataOverridden,
+      Value<String> metadataStatus,
+      Value<DateTime?> lastAttemptAt,
+      Value<int?> seasonNumber,
+      Value<int?> episodeNumber,
+      Value<String?> seriesTitle,
     });
 typedef $$MediaFilesTableUpdateCompanionBuilder =
     MediaFilesCompanion Function({
@@ -1974,6 +2418,11 @@ typedef $$MediaFilesTableUpdateCompanionBuilder =
       Value<String?> genres,
       Value<String?> originalLanguage,
       Value<bool> metadataOverridden,
+      Value<String> metadataStatus,
+      Value<DateTime?> lastAttemptAt,
+      Value<int?> seasonNumber,
+      Value<int?> episodeNumber,
+      Value<String?> seriesTitle,
     });
 
 final class $$MediaFilesTableReferences
@@ -2117,6 +2566,31 @@ class $$MediaFilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get metadataStatus => $composableBuilder(
+    column: $table.metadataStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get seasonNumber => $composableBuilder(
+    column: $table.seasonNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get episodeNumber => $composableBuilder(
+    column: $table.episodeNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesTitle => $composableBuilder(
+    column: $table.seriesTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LibraryFoldersTableFilterComposer get libraryFolderId {
     final $$LibraryFoldersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -2255,6 +2729,31 @@ class $$MediaFilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get metadataStatus => $composableBuilder(
+    column: $table.metadataStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get seasonNumber => $composableBuilder(
+    column: $table.seasonNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get episodeNumber => $composableBuilder(
+    column: $table.episodeNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesTitle => $composableBuilder(
+    column: $table.seriesTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LibraryFoldersTableOrderingComposer get libraryFolderId {
     final $$LibraryFoldersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2375,6 +2874,31 @@ class $$MediaFilesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get metadataStatus => $composableBuilder(
+    column: $table.metadataStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastAttemptAt => $composableBuilder(
+    column: $table.lastAttemptAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get seasonNumber => $composableBuilder(
+    column: $table.seasonNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get episodeNumber => $composableBuilder(
+    column: $table.episodeNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get seriesTitle => $composableBuilder(
+    column: $table.seriesTitle,
+    builder: (column) => column,
+  );
+
   $$LibraryFoldersTableAnnotationComposer get libraryFolderId {
     final $$LibraryFoldersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -2449,6 +2973,11 @@ class $$MediaFilesTableTableManager
                 Value<String?> genres = const Value.absent(),
                 Value<String?> originalLanguage = const Value.absent(),
                 Value<bool> metadataOverridden = const Value.absent(),
+                Value<String> metadataStatus = const Value.absent(),
+                Value<DateTime?> lastAttemptAt = const Value.absent(),
+                Value<int?> seasonNumber = const Value.absent(),
+                Value<int?> episodeNumber = const Value.absent(),
+                Value<String?> seriesTitle = const Value.absent(),
               }) => MediaFilesCompanion(
                 id: id,
                 filePath: filePath,
@@ -2472,6 +3001,11 @@ class $$MediaFilesTableTableManager
                 genres: genres,
                 originalLanguage: originalLanguage,
                 metadataOverridden: metadataOverridden,
+                metadataStatus: metadataStatus,
+                lastAttemptAt: lastAttemptAt,
+                seasonNumber: seasonNumber,
+                episodeNumber: episodeNumber,
+                seriesTitle: seriesTitle,
               ),
           createCompanionCallback:
               ({
@@ -2497,6 +3031,11 @@ class $$MediaFilesTableTableManager
                 Value<String?> genres = const Value.absent(),
                 Value<String?> originalLanguage = const Value.absent(),
                 Value<bool> metadataOverridden = const Value.absent(),
+                Value<String> metadataStatus = const Value.absent(),
+                Value<DateTime?> lastAttemptAt = const Value.absent(),
+                Value<int?> seasonNumber = const Value.absent(),
+                Value<int?> episodeNumber = const Value.absent(),
+                Value<String?> seriesTitle = const Value.absent(),
               }) => MediaFilesCompanion.insert(
                 id: id,
                 filePath: filePath,
@@ -2520,6 +3059,11 @@ class $$MediaFilesTableTableManager
                 genres: genres,
                 originalLanguage: originalLanguage,
                 metadataOverridden: metadataOverridden,
+                metadataStatus: metadataStatus,
+                lastAttemptAt: lastAttemptAt,
+                seasonNumber: seasonNumber,
+                episodeNumber: episodeNumber,
+                seriesTitle: seriesTitle,
               ),
           withReferenceMapper: (p0) => p0
               .map(

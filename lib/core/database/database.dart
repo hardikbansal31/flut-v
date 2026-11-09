@@ -8,10 +8,11 @@ library;
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_video/core/database/tables.dart';
+import 'package:flutter_video/features/metadata/filename_parser.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [LibraryFolders, MediaFiles])
+@DriftDatabase(tables: [LibraryFolders, MediaFiles, WatchProgresses])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -23,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -59,6 +60,97 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(mediaFiles, mediaFiles.metadataOverridden);
           }
         }
+        if (from < 6) {
+          await m.addColumn(libraryFolders, libraryFolders.isAvailable);
+          await m.addColumn(libraryFolders, libraryFolders.lastSeenAt);
+          // Backfill: all existing folders are assumed available with
+          // lastSeenAt = now so pre-upgrade data is preserved.
+          await customStatement(
+            "UPDATE library_folders SET is_available = 1, last_seen_at = strftime('%s', 'now') * 1000"
+          );
+        }
+        if (from < 7) {
+          await m.addColumn(mediaFiles, mediaFiles.metadataStatus);
+          await m.addColumn(mediaFiles, mediaFiles.lastAttemptAt);
+          // Migrate existing rows:
+          // - tmdbId = -1 becomes 'notFound'
+          // - tmdbId IS NOT NULL AND tmdbId > 0 becomes 'matched'
+          // - otherwise 'pending'
+          // Clear -1 sentinel from tmdb_id to NULL
+          await customStatement('''
+            UPDATE media_files SET 
+              metadata_status = CASE 
+                WHEN tmdb_id = -1 THEN 'notFound'
+                WHEN tmdb_id IS NOT NULL AND tmdb_id > 0 THEN 'matched'
+                ELSE 'pending'
+              END,
+              last_attempt_at = CASE
+                WHEN tmdb_id IS NOT NULL THEN strftime('%s', 'now') * 1000
+                ELSE NULL
+              END,
+              tmdb_id = CASE WHEN tmdb_id = -1 THEN NULL ELSE tmdb_id END
+          ''');
+        }
+        if (from < 8) {
+          await m.addColumn(mediaFiles, mediaFiles.seasonNumber);
+          await m.addColumn(mediaFiles, mediaFiles.episodeNumber);
+          await m.addColumn(mediaFiles, mediaFiles.seriesTitle);
+          await customStatement('DROP INDEX IF EXISTS idx_media_filepath;');
+
+          // Backfill existing rows by parsing existing tmdbTitle / fileName once:
+          final rows = await customSelect(
+            'SELECT id, file_name, tmdb_title, media_type FROM media_files',
+          ).get();
+
+          for (final row in rows) {
+            final id = row.read<int>('id');
+            final fileName = row.read<String>('file_name');
+            final tmdbTitle = row.readNullable<String>('tmdb_title');
+            final mediaType = row.readNullable<String>('media_type');
+
+            if (mediaType == 'tv' || mediaType == 'anime') {
+              int? season;
+              int? episode;
+              String? showTitle;
+
+              if (tmdbTitle != null) {
+                final seMatch = RegExp(r'S(\d+)E(\d+)').firstMatch(tmdbTitle);
+                if (seMatch != null) {
+                  season = int.tryParse(seMatch.group(1)!);
+                  episode = int.tryParse(seMatch.group(2)!);
+                }
+                final titleMatch =
+                    RegExp(r'^(.+?)\s*-\s*S\d+E\d+').firstMatch(tmdbTitle);
+                if (titleMatch != null) {
+                  showTitle = titleMatch.group(1)!.trim();
+                }
+              }
+
+              // Fallback to FilenameParser
+              if (season == null || episode == null || showTitle == null) {
+                final parsed = FilenameParser.parse(fileName);
+                season ??= parsed.season;
+                episode ??= parsed.episode;
+                showTitle ??= parsed.cleanTitle;
+              }
+
+              await customStatement(
+                'UPDATE media_files SET season_number = ?, episode_number = ?, series_title = ? WHERE id = ?',
+                [season, episode, showTitle, id],
+              );
+            }
+          }
+        }
+        if (from < 9) {
+          await m.createTable(watchProgresses);
+          // Migrate existing watch progress values from media_files:
+          await customStatement('''
+            INSERT OR IGNORE INTO watch_progresses (file_id, position_millis, duration_millis, last_watched_at)
+            SELECT id, position_millis, duration_millis, last_watched_at
+            FROM media_files
+            WHERE position_millis IS NOT NULL OR last_watched_at IS NOT NULL;
+          ''');
+        }
       },
     );
   }
@@ -89,14 +181,32 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Delete a library folder and all its associated media files.
+  /// Delete a library folder and all its associated media files atomically.
   Future<void> removeLibraryFolder(int folderId) async {
-    // Delete child media files first.
-    await (delete(mediaFiles)
-          ..where((t) => t.libraryFolderId.equals(folderId)))
-        .go();
-    // Then delete the folder row.
-    await (delete(libraryFolders)..where((t) => t.id.equals(folderId))).go();
+    await transaction(() async {
+      await removeMediaFilesByFolder(folderId);
+      await (delete(libraryFolders)..where((t) => t.id.equals(folderId))).go();
+    });
+  }
+
+  /// Mark a library folder as unavailable (drive disconnected, path missing).
+  /// Preserves all media rows and their watch progress.
+  Future<void> markFolderUnavailable(int folderId) async {
+    await (update(libraryFolders)..where((t) => t.id.equals(folderId))).write(
+      const LibraryFoldersCompanion(
+        isAvailable: Value(false),
+      ),
+    );
+  }
+
+  /// Mark a library folder as available and update its last-seen timestamp.
+  Future<void> markFolderAvailable(int folderId) async {
+    await (update(libraryFolders)..where((t) => t.id.equals(folderId))).write(
+      LibraryFoldersCompanion(
+        isAvailable: const Value(true),
+        lastSeenAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   // Media File queries
@@ -170,28 +280,47 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Updates the watch progress for a specific file.
-  ///
-  /// Also stamps [lastWatchedAt] so the Continue Watching section can
-  /// determine which episode was interacted with most recently.
   Future<void> updateWatchProgress(int fileId, int positionMillis, int durationMillis) async {
+    final now = DateTime.now();
+    await into(watchProgresses).insertOnConflictUpdate(
+      WatchProgressesCompanion(
+        fileId: Value(fileId),
+        positionMillis: Value(positionMillis),
+        durationMillis: Value(durationMillis),
+        lastWatchedAt: Value(now),
+      ),
+    );
+    // Keep media_files in sync without blocking the stream optimization
     await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
       MediaFilesCompanion(
         positionMillis: Value(positionMillis),
         durationMillis: Value(durationMillis),
-        lastWatchedAt: Value(DateTime.now()),
+        lastWatchedAt: Value(now),
       ),
     );
   }
 
   /// Batch marks a list of files as watched.
-  /// Sets position to duration (or 1 if null) to ensure it hits 100% completion.
   Future<void> markAsWatched(List<int> fileIds) async {
     if (fileIds.isEmpty) return;
-    
+    final now = DateTime.now();
+    for (final id in fileIds) {
+      await customStatement('''
+        INSERT INTO watch_progresses (file_id, position_millis, duration_millis, last_watched_at)
+        SELECT id, 
+               CASE WHEN duration_millis IS NULL OR duration_millis = 0 THEN 1 ELSE duration_millis END,
+               duration_millis,
+               ?
+        FROM media_files WHERE id = ?
+        ON CONFLICT(file_id) DO UPDATE SET
+          position_millis = excluded.position_millis,
+          last_watched_at = excluded.last_watched_at
+      ''', [now.millisecondsSinceEpoch, id]);
+    }
     await (update(mediaFiles)..where((t) => t.id.isIn(fileIds))).write(
       MediaFilesCompanion.custom(
         positionMillis: const CustomExpression('CASE WHEN duration_millis IS NULL OR duration_millis = 0 THEN 1 ELSE duration_millis END'),
-        lastWatchedAt: Variable(DateTime.now()),
+        lastWatchedAt: Variable(now),
       ),
     );
   }
@@ -199,18 +328,33 @@ class AppDatabase extends _$AppDatabase {
   /// Batch marks a list of files as unwatched.
   Future<void> markAsUnwatched(List<int> fileIds) async {
     if (fileIds.isEmpty) return;
-    
+    await (delete(watchProgresses)..where((t) => t.fileId.isIn(fileIds))).go();
     await (update(mediaFiles)..where((t) => t.id.isIn(fileIds))).write(
       const MediaFilesCompanion(
         positionMillis: Value(0),
-        lastWatchedAt: Value(null), // Clear lastWatchedAt so it resets fully
+        lastWatchedAt: Value(null),
       ),
     );
+  }
+
+  /// Watch all watch progress records from the isolated [watchProgresses] table.
+  Stream<List<WatchProgresse>> watchAllWatchProgress() {
+    return select(watchProgresses).watch();
   }
 
   /// Remove a single media file by its path.
   Future<void> removeMediaFileByPath(String path) async {
     await (delete(mediaFiles)..where((t) => t.filePath.equals(path))).go();
+  }
+
+  /// Bulk remove media files by their paths using chunked isIn.
+  Future<void> removeMediaFilesByPaths(List<String> paths) async {
+    if (paths.isEmpty) return;
+    const chunkSize = 100;
+    for (var i = 0; i < paths.length; i += chunkSize) {
+      final chunk = paths.skip(i).take(chunkSize).toList();
+      await (delete(mediaFiles)..where((t) => t.filePath.isIn(chunk))).go();
+    }
   }
 
   /// Remove all media files belonging to a specific library folder.
@@ -221,22 +365,56 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get all file paths for a folder (used during scan to detect stale entries).
+  /// Uses selectOnly to avoid loading and deserializing unused columns.
   Future<List<String>> getFilePathsForFolder(int folderId) async {
-    final query = select(mediaFiles)
-      ..where((t) => t.libraryFolderId.equals(folderId));
+    final query = selectOnly(mediaFiles)
+      ..addColumns([mediaFiles.filePath])
+      ..where(mediaFiles.libraryFolderId.equals(folderId));
     final rows = await query.get();
-    return rows.map((r) => r.filePath).toList();
+    return rows.map((r) => r.read(mediaFiles.filePath)!).toList();
+  }
+
+  /// Get a map of filePath -> (size, modified) for all files in a folder.
+  /// Allows the scanner to skip unchanged files without rewriting database rows.
+  Future<Map<String, ({BigInt size, DateTime modified})>> getFileStatMapForFolder(int folderId) async {
+    final query = selectOnly(mediaFiles)
+      ..addColumns([mediaFiles.filePath, mediaFiles.fileSizeBytes, mediaFiles.lastModified])
+      ..where(mediaFiles.libraryFolderId.equals(folderId));
+    final rows = await query.get();
+    return {
+      for (final r in rows)
+        r.read(mediaFiles.filePath)!: (
+          size: r.read(mediaFiles.fileSizeBytes)!,
+          modified: r.read(mediaFiles.lastModified)!,
+        ),
+    };
   }
 
   // Metadata queries
 
-  /// Get all media files that have not been matched to TMDB yet (or failed previously),
-  /// excluding files that have been manually overridden by the user.
-  Future<List<MediaFile>> getUnmatchedMediaFiles() {
+  /// Get media files that need TMDB metadata lookup, excluding manually overridden files.
+  /// Does not re-query 'notFound' files unless they exceed [notFoundBackoff] (default 7 days).
+  /// Pending files and files in 'error' state are always queried.
+  Future<List<MediaFile>> getUnmatchedMediaFiles({
+    Duration notFoundBackoff = const Duration(days: 7),
+  }) {
+    final cutoff = DateTime.now().subtract(notFoundBackoff);
     return (select(mediaFiles)
           ..where((t) =>
-              (t.tmdbId.isNull() | t.tmdbId.equals(-1)) &
-              t.metadataOverridden.equals(false)))
+              t.metadataOverridden.equals(false) &
+              (t.metadataStatus.isNull() |
+                  t.metadataStatus.equals('pending') |
+                  t.metadataStatus.equals('error') |
+                  (t.metadataStatus.equals('notFound') &
+                      (t.lastAttemptAt.isNull() |
+                          t.lastAttemptAt.isSmallerOrEqualValue(cutoff))))))
+        .get();
+  }
+
+  /// Get all media files eligible for full refresh (all files not manually overridden).
+  Future<List<MediaFile>> getAllRefreshableMediaFiles() {
+    return (select(mediaFiles)
+          ..where((t) => t.metadataOverridden.equals(false)))
         .get();
   }
 
@@ -254,6 +432,9 @@ class AppDatabase extends _$AppDatabase {
     String? genres,
     String? originalLanguage,
     bool? metadataOverridden,
+    int? seasonNumber,
+    int? episodeNumber,
+    String? seriesTitle,
   }) async {
     await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
       MediaFilesCompanion(
@@ -267,6 +448,11 @@ class AppDatabase extends _$AppDatabase {
         voteAverage: Value(voteAverage),
         genres: Value(genres),
         originalLanguage: Value(originalLanguage),
+        metadataStatus: const Value('matched'),
+        lastAttemptAt: Value(DateTime.now()),
+        seasonNumber: Value(seasonNumber),
+        episodeNumber: Value(episodeNumber),
+        seriesTitle: Value(seriesTitle),
         metadataOverridden: metadataOverridden != null
             ? Value(metadataOverridden)
             : const Value.absent(),
@@ -274,16 +460,31 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  /// Mark a file as uncategorized (no TMDB match found).
-  /// Sets tmdbId to -1 so it won't be retried automatically.
-  Future<void> markAsUncategorized(int fileId) async {
+  /// Mark a file as notFound (TMDB search completed but no match was found).
+  Future<void> markAsNotFound(int fileId) async {
     await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
-      const MediaFilesCompanion(
-        tmdbId: Value(-1),
-        mediaType: Value('uncategorized'),
+      MediaFilesCompanion(
+        tmdbId: const Value(null),
+        mediaType: const Value('uncategorized'),
+        metadataStatus: const Value('notFound'),
+        lastAttemptAt: Value(DateTime.now()),
       ),
     );
   }
+
+  /// Mark a file as error (transient network or server failure).
+  /// Preserves any existing metadata so failed refreshes don't lose data.
+  Future<void> markAsError(int fileId) async {
+    await (update(mediaFiles)..where((t) => t.id.equals(fileId))).write(
+      MediaFilesCompanion(
+        metadataStatus: const Value('error'),
+        lastAttemptAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Deprecated: use [markAsNotFound] instead.
+  Future<void> markAsUncategorized(int fileId) => markAsNotFound(fileId);
 
   /// Clear all metadata (for re-fetch), preserving files marked with metadataOverridden.
   Future<void> clearAllMetadata() async {
@@ -304,4 +505,10 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
+}
+
+/// Extension providing domain helpers on [MediaFile].
+extension MediaFileX on MediaFile {
+  /// Whether this file is part of a TV or anime series.
+  bool get isSeries => mediaType == 'tv' || mediaType == 'anime';
 }

@@ -1,45 +1,70 @@
 /// Root MaterialApp configuration.
 ///
-/// Sets up the dark theme, removes the debug banner, and routes to
-/// the home screen.
+/// Sets up the dark theme, global keyboard shortcuts, and desktop
+/// window close listener for saving playback state.
 library;
 
+import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_video/core/save_state_provider.dart';
 import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/browse/screens/home_screen.dart';
 import 'package:window_manager/window_manager.dart';
 
-class SaveStateNotifier extends Notifier<Future<void> Function()?> {
-  @override
-  Future<void> Function()? build() => null;
-
-  void setCallback(Future<void> Function()? callback) => state = callback;
-}
-final saveStateProvider = NotifierProvider<SaveStateNotifier, Future<void> Function()?>(SaveStateNotifier.new);
-
-class PenguinApp extends ConsumerWidget {
+class PenguinApp extends ConsumerStatefulWidget {
   const PenguinApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PenguinApp> createState() => _PenguinAppState();
+}
+
+class _PenguinAppState extends ConsumerState<PenguinApp> with WindowListener {
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      windowManager.addListener(this);
+      windowManager.setPreventClose(true);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  /// Saves playback progress before exiting the application.
+  Future<void> _handleQuit() async {
+    final saveCallback = ref.read(saveStateProvider);
+    if (saveCallback != null) {
+      try {
+        await saveCallback();
+      } catch (e) {
+        developer.log('Error saving state on quit: $e', name: 'PenguinApp');
+      }
+    }
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      await windowManager.destroy();
+    }
+  }
+
+  @override
+  void onWindowClose() async {
+    await _handleQuit();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return CallbackShortcuts(
       bindings: {
-        SingleActivator(LogicalKeyboardKey.keyQ, control: true): () async {
-          final saveCallback = ref.read(saveStateProvider);
-          if (saveCallback != null) {
-            await saveCallback();
-          }
-          await windowManager.destroy();
-        },
-        SingleActivator(LogicalKeyboardKey.keyQ, meta: true): () async {
-          final saveCallback = ref.read(saveStateProvider);
-          if (saveCallback != null) {
-            await saveCallback();
-          }
-          await windowManager.destroy();
-        },
+        SingleActivator(LogicalKeyboardKey.keyQ, control: true): _handleQuit,
+        SingleActivator(LogicalKeyboardKey.keyQ, meta: true): _handleQuit,
       },
       child: Focus(
         autofocus: true,

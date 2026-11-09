@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter_video/core/database/database.dart';
 import 'package:path/path.dart' as p;
@@ -7,71 +8,124 @@ class LibraryScannerService {
 
   LibraryScannerService(this._db);
 
-  static const _supportedExtensions = {
+  static const supportedExtensions = {
     '.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', 
     '.m4v', '.ts', '.mpg', '.mpeg', '.3gp', '.ogv'
   };
 
   /// Scans a specific folder recursively and updates the database.
   ///
-  /// If the folder no longer exists on disk, all its media entries are removed.
-  /// Files that exist on disk are upserted; files that were in the DB but are
-  /// no longer on disk are removed (stale entry cleanup).
+  /// Performance optimizations:
+  ///   - Loads existing path -> (size, mtime) once.
+  ///   - Stats files in bounded-concurrency chunks of 50.
+  ///   - Skips files whose size and modified timestamp are unchanged.
+  ///   - Deletes stale rows in bulk using chunked `isIn`.
+  ///   - If directory listing throws, preserves all existing entries.
   Future<void> scanFolder(LibraryFolder folder) async {
     final dir = Directory(folder.path);
 
-    // If the entire folder was deleted from disk, purge all its media entries.
+    // If the folder is missing, mark it unavailable but keep all data.
     if (!await dir.exists()) {
-      await _db.removeMediaFilesByFolder(folder.id);
+      await _db.markFolderUnavailable(folder.id);
+      developer.log(
+        'Folder not found, marked unavailable: ${folder.path}',
+        name: 'LibraryScannerService',
+      );
       return;
     }
 
-    final existingFiles = await _db.getFilePathsForFolder(folder.id);
-    final existingPaths = existingFiles.toSet();
-    final scannedPaths = <String>{};
+    // Folder exists — mark it available.
+    await _db.markFolderAvailable(folder.id);
 
-    final companionsBatch = <MediaFilesCompanion>[];
+    final existingStats = await _db.getFileStatMapForFolder(folder.id);
+    final scannedPaths = <String>{};
+    final candidateFiles = <File>[];
+    bool listingCompleted = false;
 
     try {
       await for (final entity in dir.list(recursive: true, followLinks: false)) {
         if (entity is File) {
           final ext = p.extension(entity.path).toLowerCase();
-          if (_supportedExtensions.contains(ext)) {
-            final path = entity.path;
-            scannedPaths.add(path);
-            
-            try {
-              final stat = await entity.stat();
-              companionsBatch.add(
-                MediaFilesCompanion.insert(
-                  filePath: path,
-                  fileName: p.basenameWithoutExtension(path),
-                  fileExtension: ext.substring(1), // remove dot
-                  fileSizeBytes: BigInt.from(stat.size),
-                  libraryFolderId: folder.id,
-                  lastModified: stat.modified,
-                )
-              );
-            } catch (_) {
-              // Individual file stat/insert failed - skip this file but
-              // continue scanning the rest.
-            }
+          if (supportedExtensions.contains(ext)) {
+            scannedPaths.add(entity.path);
+            candidateFiles.add(entity);
           }
         }
       }
-      
-      if (companionsBatch.isNotEmpty) {
-        await _db.upsertMediaFilesBatch(companionsBatch);
-      }
-    } catch (_) {
-      // Directory listing failed (permission denied, etc.) - proceed to
-      // cleanup with whatever was scanned so far.
+      listingCompleted = true;
+    } on FileSystemException catch (e) {
+      developer.log(
+        'Directory listing failed for ${folder.path}: ${e.message}. '
+        'Skipping prune to prevent data loss.',
+        name: 'LibraryScannerService',
+        level: 900,
+      );
     }
 
-    // Always clean up stale entries, even if the scan was partial.
-    final stalePaths = existingPaths.difference(scannedPaths);
-    for (final path in stalePaths) {
-      await _db.removeMediaFileByPath(path);
+    // Stat files in bounded-concurrency chunks (50 at a time)
+    final companionsBatch = <MediaFilesCompanion>[];
+    const statChunkSize = 50;
+
+    for (var i = 0; i < candidateFiles.length; i += statChunkSize) {
+      final chunk = candidateFiles.skip(i).take(statChunkSize).toList();
+      final stats = await Future.wait(
+        chunk.map((file) async {
+          try {
+            final stat = await file.stat();
+            return (file: file, stat: stat);
+          } on FileSystemException catch (e) {
+            developer.log(
+              'Failed to stat file, skipping: ${file.path} — ${e.message}',
+              name: 'LibraryScannerService',
+              level: 800,
+            );
+            return null;
+          }
+        }),
+      );
+
+      for (final result in stats) {
+        if (result == null) continue;
+        final file = result.file;
+        final stat = result.stat;
+        final path = file.path;
+        final existing = existingStats[path];
+
+        // Skip rows whose size and lastModified are unchanged!
+        if (existing != null &&
+            existing.size == BigInt.from(stat.size) &&
+            existing.modified == stat.modified) {
+          continue;
+        }
+
+        final ext = p.extension(path).toLowerCase();
+        companionsBatch.add(
+          MediaFilesCompanion.insert(
+            filePath: path,
+            fileName: p.basenameWithoutExtension(path),
+            fileExtension: ext.substring(1),
+            fileSizeBytes: BigInt.from(stat.size),
+            libraryFolderId: folder.id,
+            lastModified: stat.modified,
+          ),
+        );
+      }
+    }
+
+    // Only write changed or newly added rows
+    if (companionsBatch.isNotEmpty) {
+      await _db.upsertMediaFilesBatch(companionsBatch);
+    }
+
+    // Only prune stale entries if the listing completed successfully
+    if (listingCompleted) {
+      final stalePaths = existingStats.keys
+          .toSet()
+          .difference(scannedPaths)
+          .toList();
+      if (stalePaths.isNotEmpty) {
+        await _db.removeMediaFilesByPaths(stalePaths);
+      }
     }
   }
 
@@ -84,15 +138,21 @@ class LibraryScannerService {
   }
 
   /// Lightweight prune for a single folder: only removes DB entries whose
-  /// files no longer exist on disk. Does NOT upsert existing files, so it
-  /// triggers no unnecessary Drift stream emissions.
+  /// files no longer exist on disk.
   Future<void> pruneFolder(LibraryFolder folder) async {
     final dir = Directory(folder.path);
 
     if (!await dir.exists()) {
-      await _db.removeMediaFilesByFolder(folder.id);
+      await _db.markFolderUnavailable(folder.id);
+      developer.log(
+        'Folder not found during prune, marked unavailable: ${folder.path}',
+        name: 'LibraryScannerService',
+      );
       return;
     }
+
+    // Folder exists — mark available.
+    await _db.markFolderAvailable(folder.id);
 
     final existingPaths = await _db.getFilePathsForFolder(folder.id);
     
@@ -113,8 +173,8 @@ class LibraryScannerService {
       }
     }
     
-    for (final path in missingPaths) {
-      await _db.removeMediaFileByPath(path);
+    if (missingPaths.isNotEmpty) {
+      await _db.removeMediaFilesByPaths(missingPaths);
     }
   }
 

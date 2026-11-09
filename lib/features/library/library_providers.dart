@@ -137,8 +137,7 @@ final continueWatchingProvider = Provider<List<ContinueWatchingEntry>>((ref) {
   final tvFiles = <MediaFile>[];
 
   for (final file in allFiles) {
-    final type = file.mediaType;
-    if (type == 'tv' || type == 'anime') {
+    if (file.isSeries) {
       tvFiles.add(file);
     } else {
       movies.add(file);
@@ -252,10 +251,7 @@ class ContinueWatchingEntry {
 /// Groups all TV/anime files into [SeriesItem] objects for the library grids.
 final groupedSeriesProvider = Provider<List<SeriesItem>>((ref) {
   final allFiles = ref.watch(libraryFilesProvider).value ?? [];
-  final tvAnimeFiles = allFiles.where((f) {
-    final type = f.mediaType;
-    return type == 'tv' || type == 'anime';
-  }).toList();
+  final tvAnimeFiles = allFiles.where((f) => f.isSeries).toList();
 
   return SeriesItem.groupFiles(tvAnimeFiles);
 });

@@ -74,7 +74,9 @@ final tmdbClientProvider = Provider<TmdbClient?>((ref) {
   final apiKey = ref.watch(tmdbApiKeyProvider);
   if (apiKey.isEmpty) return null;
   final baseUrl = ref.watch(tmdbApiBaseUrlProvider);
-  return TmdbClient(apiKey: apiKey, baseUrl: baseUrl);
+  final client = TmdbClient(apiKey: apiKey, baseUrl: baseUrl);
+  ref.onDispose(() => client.dispose());
+  return client;
 });
 
 // Metadata Service

@@ -99,6 +99,7 @@ class MediaDetailScreen extends ConsumerWidget {
           // Content section
           if (isSeries)
             ...currentSeries.seasons.map((season) {
+              final seasonEpisodes = (currentSeries as SeriesItem).episodesForSeason(season);
               return SliverMainAxisGroup(
                 slivers: [
                   // Season header
@@ -117,8 +118,7 @@ class MediaDetailScreen extends ConsumerWidget {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final episodes = currentSeries!.episodesForSeason(season);
-                          final episode = episodes[index];
+                          final episode = seasonEpisodes[index];
                           return _EpisodeTile(
                             file: episode,
                             onTap: () {
@@ -149,7 +149,7 @@ class MediaDetailScreen extends ConsumerWidget {
                             },
                           );
                         },
-                        childCount: currentSeries!.episodesForSeason(season).length,
+                        childCount: seasonEpisodes.length,
                       ),
                     ),
                   ),

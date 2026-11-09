@@ -24,6 +24,17 @@ class LibraryFolders extends Table {
 
   /// When this folder was first added.
   DateTimeColumn get addedAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// Whether the folder is currently accessible on disk.
+  /// When a folder becomes inaccessible (e.g. NAS disconnected, drive
+  /// unmounted), this is set to `false` and its media rows are preserved.
+  /// Only an explicit "remove folder" action deletes rows.
+  BoolColumn get isAvailable =>
+      boolean().withDefault(const Constant(true))();
+
+  /// Timestamp of the last time the folder was successfully seen on disk
+  /// during a scan or prune operation.
+  DateTimeColumn get lastSeenAt => dateTime().nullable()();
 }
 
 // Media Files
@@ -31,7 +42,6 @@ class LibraryFolders extends Table {
 /// Stores every video file discovered inside a [LibraryFolder].
 /// Each row represents a single playable file on disk.
 @TableIndex(name: 'idx_media_folder', columns: {#libraryFolderId})
-@TableIndex(name: 'idx_media_filepath', columns: {#filePath})
 @TableIndex(name: 'idx_media_tmdb', columns: {#tmdbId})
 class MediaFiles extends Table {
   /// Auto-incrementing primary key.
@@ -106,4 +116,43 @@ class MediaFiles extends Table {
   /// If true, auto-scans and library refresh will not touch this file.
   BoolColumn get metadataOverridden =>
       boolean().withDefault(const Constant(false))();
+
+  /// Status of TMDB metadata resolution: 'pending', 'matched', 'notFound', 'error'.
+  TextColumn get metadataStatus =>
+      text().withDefault(const Constant('pending'))();
+
+  /// Timestamp of the last metadata fetch attempt.
+  DateTimeColumn get lastAttemptAt => dateTime().nullable()();
+
+  /// Season number if this file is part of a TV or anime series.
+  IntColumn get seasonNumber => integer().nullable()();
+
+  /// Episode number if this file is part of a TV or anime series.
+  IntColumn get episodeNumber => integer().nullable()();
+
+  /// Title of the series if this file is part of a TV or anime series.
+  TextColumn get seriesTitle => text().nullable()();
+}
+
+// Watch Progress
+
+/// Stores playback progress for media files in an isolated table.
+/// Kept separate from [MediaFiles] so periodic progress writes do not
+/// re-emit the entire library media files stream.
+class WatchProgresses extends Table {
+  /// Foreign key to the media file being tracked.
+  IntColumn get fileId =>
+      integer().references(MediaFiles, #id, onDelete: KeyAction.cascade)();
+
+  /// Last watched position in milliseconds.
+  IntColumn get positionMillis => integer().nullable()();
+
+  /// Total duration of the media in milliseconds.
+  IntColumn get durationMillis => integer().nullable()();
+
+  /// Timestamp of the last time the user watched this file.
+  DateTimeColumn get lastWatchedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {fileId};
 }

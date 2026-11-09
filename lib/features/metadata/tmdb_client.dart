@@ -103,8 +103,9 @@ class TmdbSearchResult {
   }
 }
 
-/// Episode details from TMDB's /tv/{id}/season/{s}/episode/{e} endpoint.
+/// Episode details from TMDB's /tv/{id}/season/{s}/episode/{e} or season details endpoint.
 class TmdbEpisodeResult {
+  final int? episodeNumber;
   final String? name;
   final String? overview;
   final String? stillPath;
@@ -112,6 +113,7 @@ class TmdbEpisodeResult {
   final double voteAverage;
 
   const TmdbEpisodeResult({
+    this.episodeNumber,
     this.name,
     this.overview,
     this.stillPath,
@@ -121,6 +123,7 @@ class TmdbEpisodeResult {
 
   factory TmdbEpisodeResult.fromJson(Map<String, dynamic> json) {
     return TmdbEpisodeResult(
+      episodeNumber: json['episode_number'] as int?,
       name: json['name'] as String?,
       overview: json['overview'] as String?,
       stillPath: json['still_path'] as String?,
@@ -139,12 +142,24 @@ class TmdbEpisodeResult {
 /// Season details from TMDB's /tv/{id}/season/{s} endpoint.
 class TmdbSeasonResult {
   final String? posterPath;
+  final List<TmdbEpisodeResult> episodes;
 
-  const TmdbSeasonResult({this.posterPath});
+  const TmdbSeasonResult({
+    this.posterPath,
+    this.episodes = const [],
+  });
 
   factory TmdbSeasonResult.fromJson(Map<String, dynamic> json) {
+    final rawEpisodes = json['episodes'] as List<dynamic>?;
+    final parsedEpisodes = rawEpisodes != null
+        ? rawEpisodes
+            .map((e) => TmdbEpisodeResult.fromJson(e as Map<String, dynamic>))
+            .toList()
+        : const <TmdbEpisodeResult>[];
+
     return TmdbSeasonResult(
       posterPath: json['poster_path'] as String?,
+      episodes: parsedEpisodes,
     );
   }
 }

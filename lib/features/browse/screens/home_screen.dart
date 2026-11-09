@@ -321,10 +321,10 @@ class _RecentlyAddedSection extends ConsumerWidget {
 
     // Separate movies from TV/anime
     final movies = recentFiles
-        .where((f) => f.mediaType != 'tv' && f.mediaType != 'anime')
+        .where((f) => !f.isSeries)
         .toList();
     final tvFiles = recentFiles
-        .where((f) => f.mediaType == 'tv' || f.mediaType == 'anime')
+        .where((f) => f.isSeries)
         .toList();
 
     // Group TV/anime into series

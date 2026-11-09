@@ -4,6 +4,7 @@ import 'package:flutter_video/core/theme/app_theme.dart';
 import 'package:flutter_video/features/library/library_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_providers.dart';
 import 'package:flutter_video/features/metadata/metadata_service.dart';
+import 'package:path/path.dart' as p;
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class LibraryManagementScreen extends ConsumerStatefulWidget {
@@ -43,12 +44,62 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
   }
 
   Future<void> _addFolder() async {
-    final path = _pathController.text.trim();
-    if (path.isEmpty) return;
-    
+    final rawPath = _pathController.text.trim();
+    if (rawPath.isEmpty) return;
+
+    // Normalize the path: resolve and remove trailing separators.
+    final normalized = p.normalize(rawPath);
+
+    // Check for overlapping folders (parent or child of an existing one).
+    final folders = ref.read(libraryFoldersProvider).value ?? [];
+    for (final existing in folders) {
+      final existingNorm = p.normalize(existing.path);
+      if (p.equals(normalized, existingNorm)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('This folder is already in your library: $existingNorm'),
+              backgroundColor: AppTheme.errorSnackbar,
+            ),
+          );
+        }
+        return;
+      }
+      if (p.isWithin(normalized, existingNorm)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Cannot add "$normalized" because it is a parent of existing '
+                'folder "$existingNorm". Remove the child folder first.',
+              ),
+              backgroundColor: AppTheme.errorSnackbar,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+      if (p.isWithin(existingNorm, normalized)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Cannot add "$normalized" because it is a subfolder of '
+                'existing folder "$existingNorm". Remove the parent folder first.',
+              ),
+              backgroundColor: AppTheme.errorSnackbar,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     try {
       final db = ref.read(databaseProvider);
-      await db.insertLibraryFolder(path);
+      await db.insertLibraryFolder(normalized);
       _pathController.clear();
       
       await _triggerScan();
@@ -328,12 +379,36 @@ class _LibraryManagementScreenState extends ConsumerState<LibraryManagementScree
                     itemCount: folders.length,
                     itemBuilder: (context, index) {
                       final folder = folders[index];
+                      final isUnavailable = !folder.isAvailable;
                       return Card(
                         color: AppTheme.textPrimary10,
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
-                          leading: Icon(PhosphorIcons.folder, color: kAccentColor),
-                          title: Text(folder.label ?? folder.path),
+                          leading: Icon(
+                            isUnavailable ? PhosphorIcons.folderDashed : PhosphorIcons.folder,
+                            color: isUnavailable ? AppTheme.errorSnackbar : kAccentColor,
+                          ),
+                          title: Row(
+                            children: [
+                              Expanded(child: Text(folder.label ?? folder.path)),
+                              if (isUnavailable)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.errorSnackbar.withAlpha(40),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'Unavailable',
+                                    style: TextStyle(
+                                      color: AppTheme.errorSnackbar,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                           subtitle: Text(folder.path),
                           trailing: IconButton(
                             icon: Icon(PhosphorIcons.trash, color: AppTheme.errorSnackbar),
